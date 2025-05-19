@@ -36,7 +36,7 @@ toggleBtn.addEventListener('click', () => {
   }
 });
 
-const sun = new THREE.DirectionalLight(0xffffff, 4);
+const sun = new THREE.DirectionalLight(0xffffff, 10);
 
 sun.position.set(0, 50, -50);
 sun.target.position.set(0, 0, 0);
@@ -56,27 +56,27 @@ let car = null;
 // Load car model
 const loader = new GLTFLoader();
 loader.load(
-  '../cars/2019 Gumbert Apollo/source/2019_gumpert_apollo.glb',
+  '../cars/Dodge SRT Tomahawk/source/dodge_srt_tomahawk_x.glb',
   function (gltf) {
     car = gltf.scene;
     car.scale.set(100, 100, 100);
-    car.position.y = 0.04;
+    car.position.y = 0.2;
     car.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
     scene.add(car);
 
     // Ensure car materials respond to lighting
-    car.traverse((child) => {
-      if (child.isMesh) {
-        child.material = new THREE.MeshStandardMaterial({
-          color: child.material.color || 0xffffff,
-          map: child.material.map || null,
-          metalness: 0.5,
-          roughness: 0.8,
-        });
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
+    // car.traverse((child) => {
+    //   if (child.isMesh) {
+    //     child.material = new THREE.MeshStandardMaterial({
+    //       color: child.material.color || 0xffffff,
+    //       map: child.material.map || null,
+    //       metalness: 0.5,
+    //       roughness: 0.8,
+    //     });
+    //     child.castShadow = true;
+    //     child.receiveShadow = true;
+    //   }
+    // });
 
     // Add headlights
     const headlightLeft = new THREE.SpotLight(0xffffff, 2, 200, Math.PI / 2, 0.075, 2);
@@ -146,15 +146,40 @@ const roadSegments = [];
 let lastZ = 0;
 
 function createRoadSegment(z) {
-  const geometry = new THREE.BoxGeometry(roadWidth, 0.1, roadSegmentLength);
-  const material = new THREE.MeshStandardMaterial({ color: 0x333333 });
-  const segment = new THREE.Mesh(geometry, material);
-  segment.position.set(0, 0, z);
-  segment.castShadow = true;
-  segment.receiveShadow = true;
-  scene.add(segment);
-  roadSegments.push(segment);
-}
+  const geometry = new THREE.BoxGeometry(roadWidth, 0.1, roadSegmentLength, 64, 1, 64);
+  
+  const textureLoader = new THREE.TextureLoader();
+
+  // Load maps
+  const roadNormalMap = textureLoader.load('../textures/road_normal.png');
+  const roadBumpMap = textureLoader.load('../textures/road_bump.png');
+  const roadDisplacementMap = textureLoader.load('../textures/road_displacement.png');
+
+  // Set wrap mode for seamless tiling
+  [roadNormalMap, roadBumpMap, roadDisplacementMap].forEach(tex => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(1, 1);
+  });
+
+  const roadMaterial = new THREE.MeshStandardMaterial({
+    color: 0x333333,
+    normalMap: roadNormalMap,
+    bumpMap: roadBumpMap,
+    bumpScale: 0.1,
+    displacementMap: roadDisplacementMap,
+    displacementScale: 0.2,
+    roughness: 0.9,
+    metalness: 0.1
+  });
+
+    const material = roadMaterial;
+    const segment = new THREE.Mesh(geometry, material);
+    segment.position.set(0, 0, z);
+    segment.castShadow = true;
+    segment.receiveShadow = true;
+    scene.add(segment);
+    roadSegments.push(segment);
+  }
 
 for (let i = 0; i < visibleSegments; i++) {
   createRoadSegment(i * roadSegmentLength);
