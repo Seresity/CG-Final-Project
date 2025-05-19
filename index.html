@@ -10,8 +10,46 @@
   </head>
   <body>
     <script type="module" src="main.js"></script>
-  </body>
-  <button id="toggleCameraBtn" style="position: absolute; top: 10px; left: 10px; z-index: 1;">
-    Toggle Free Camera
-  </button>  
+    <button id="toggleCameraBtn">Enter Free Camera</button>
+    <button id="lightToggleBtn">Turn Lights On</button>
+
+    <!-- Speedometer -->
+    <div id="speedometer" style="
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, #222 60%, #111 100%);
+      border: 4px solid #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      overflow: hidden;
+    ">
+      <div id="needle" style="
+        position: absolute;
+        width: 4px;
+        height: 60px;
+        background: red;
+        transform-origin: bottom center;
+        transform: rotate(-90deg);
+        bottom: 50%;
+        left: 50%;
+        margin-left: -2px;
+      "></div>
+      <div id="speedLabel" style="
+        position: absolute;
+        bottom: 25px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-family: monospace;
+        font-size: 16px;
+      ">0 km/h</div>
+    </div>
+  </body> 
 </html>

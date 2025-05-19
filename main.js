@@ -26,20 +26,40 @@ controls.enablePan = true;
 controls.enableZoom = true;
 controls.enabled = false; // start disabled
 
-const toggleBtn = document.getElementById('toggleCameraBtn');
-toggleBtn.addEventListener('click', () => {
+const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+toggleCameraBtn.addEventListener('click', () => {
   isFreeCamera = !isFreeCamera;
   controls.enabled = isFreeCamera;
-  toggleBtn.textContent = isFreeCamera ? 'Exit Free Camera' : 'Enter Free Camera';
+  toggleCameraBtn.textContent = isFreeCamera ? 'Exit Free Camera' : 'Enter Free Camera';
   if (isFreeCamera && car) {
     controls.target.copy(car.position);
   }
 });
 
+const lightToggleBtn = document.getElementById('lightToggleBtn');
+lightToggleBtn.addEventListener('click', () => {
+  lightsOn = !lightsOn;
+  headlightLeft.visible = lightsOn;
+  headlightRight.visible = lightsOn;
+  taillightLeft.visible = lightsOn;
+  taillightRight.visible = lightsOn;
+  lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
+});
+;
+
+// Add ambient lighting
+const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+scene.add(ambientLight);
+
+// Add moonlight (bluish directional light)
+const moon = new THREE.DirectionalLight(0x8899ff, 0.2);
+moon.castShadow = true;
+scene.add(moon);
+
 const sun = new THREE.DirectionalLight(0xffffff, 10);
 
 sun.position.set(0, 50, -50);
-sun.target.position.set(0, 0, 0);
+// sun.target.position.set(0, 0, 0);
 scene.add(sun.target);
 sun.shadow.bias = -0.001;
 sun.shadow.mapSize.width = 2048;
@@ -50,6 +70,13 @@ scene.add(sun);
 
 const sunRadius = 100;
 let sunAngle = 0;
+
+const boxGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1); // width, height, depth
+const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+const box = new THREE.Mesh(boxGeometry, boxMaterial);
+
+box.position.set(0.65, 1, -2.75); // X, Y, Z — lifts it 0.5 above ground
+scene.add(box);
 
 let car = null;
 
@@ -64,29 +91,15 @@ loader.load(
     car.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
     scene.add(car);
 
-    // Ensure car materials respond to lighting
-    // car.traverse((child) => {
-    //   if (child.isMesh) {
-    //     child.material = new THREE.MeshStandardMaterial({
-    //       color: child.material.color || 0xffffff,
-    //       map: child.material.map || null,
-    //       metalness: 0.5,
-    //       roughness: 0.8,
-    //     });
-    //     child.castShadow = true;
-    //     child.receiveShadow = true;
-    //   }
-    // });
-
     // Add headlights
-    const headlightLeft = new THREE.SpotLight(0xffffff, 2, 200, Math.PI / 2, 0.075, 2);
-    const headlightRight = headlightLeft.clone();
+    const headlightLeft = new THREE.SpotLight(0xffffff, 1.5, 200, Math.PI / 2, 0.075, 2);
+    const headlightRight = new THREE.SpotLight(0xffffff, 1.5, 200, Math.PI / 2, 0.075, 2);
 
-    headlightLeft.position.set(0.8, 1.2, 2.8);          
-    headlightLeft.target.position.set(0.8, 1.2, 10);
+    headlightLeft.target.position.set(0.85, 0.65, 2.25);          
+    headlightLeft.target.position.set(1, 0.1, 15);
 
-    headlightLeft.target.position.set(0.8, 1.2, 2.8);
-    headlightRight.target.position.set(-0.8, 1.2, 10);
+    headlightRight.target.position.set(-0.85, 0.65, 2.25);
+    headlightRight.target.position.set(-1, 0.1, 15);
 
     headlightLeft.visible = false;
     headlightRight.visible = false;
@@ -97,37 +110,26 @@ loader.load(
     car.add(headlightRight.target);
 
     // Add taillights
-    const taillightLeft = new THREE.SpotLight(0xffffff, 2, 200, Math.PI / 2, 0.075, 2);
-    const taillightRight = taillightLeft.clone();
+    const taillightLeft = new THREE.SpotLight(0xFF0000, 0.25, 200, Math.PI / 2, 0.075, 2);
+    const taillightRight = new THREE.SpotLight(0xFF0000, 0.25, 200, Math.PI / 2, 0.075, 2);
 
-    taillightLeft.position.set(0.5, 0.6, -2.25);
-    taillightLeft.target.position.set(0.8, 1.2, 10);
+    taillightLeft.target.position.set(0.65, 1, -3);
+    taillightLeft.target.position.set(0.65, 1, -2.5);
 
-    taillightRight.position.set(-0.5, 0.6, -2.25);
-    taillightRight.target.position.set(0.8, 1.2, 10);
+    taillightRight.target.position.set(-0.65, 1, -3);
+    taillightRight.target.position.set(-0.65, 1, -2.5);
 
-    taillightLeft.visible = false;
-    taillightRight.visible = false;
+    taillightLeft.visible = true;
+    taillightRight.visible = true;
 
     car.add(taillightLeft);
     car.add(taillightRight);
-
-    // UI to toggle lights
-    const lightToggleBtn = document.createElement('button');
-    lightToggleBtn.innerText = 'Toggle Car Lights';
-    lightToggleBtn.style.position = 'absolute';
-    lightToggleBtn.style.top = '50px';
-    lightToggleBtn.style.left = '10px';
-    lightToggleBtn.style.zIndex = '1';
-    document.body.appendChild(lightToggleBtn);
 
     let lightsOn = false;
     lightToggleBtn.addEventListener('click', () => {
       lightsOn = !lightsOn;
       headlightLeft.visible = lightsOn;
       headlightRight.visible = lightsOn;
-      taillightLeft.visible = lightsOn;
-      taillightRight.visible = lightsOn;
     });
 
     console.log(gltf.scene);
@@ -151,18 +153,20 @@ function createRoadSegment(z) {
   const textureLoader = new THREE.TextureLoader();
 
   // Load maps
+  const roadColorMap = textureLoader.load('../textures/road_diffuse.png');
   const roadNormalMap = textureLoader.load('../textures/road_normal.png');
   const roadBumpMap = textureLoader.load('../textures/road_bump.png');
   const roadDisplacementMap = textureLoader.load('../textures/road_displacement.png');
 
   // Set wrap mode for seamless tiling
-  [roadNormalMap, roadBumpMap, roadDisplacementMap].forEach(tex => {
+  [roadColorMap, roadNormalMap, roadBumpMap, roadDisplacementMap].forEach(tex => {
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(1, 1);
   });
 
   const roadMaterial = new THREE.MeshStandardMaterial({
     color: 0x333333,
+    map: roadColorMap,
     normalMap: roadNormalMap,
     bumpMap: roadBumpMap,
     bumpScale: 0.1,
@@ -187,16 +191,67 @@ for (let i = 0; i < visibleSegments; i++) {
 }
 
 // Animate
-let speed = 0.5;
+let speed = 1;
+const maxSpeed = 2.5;
+const minSpeed = 0.1;
+
+const keys = { w: false, s: false };
+
+document.addEventListener('keydown', (event) => {
+  if (event.key.toLowerCase() === 'w') keys.w = true;
+  if (event.key.toLowerCase() === 's') keys.s = true;
+});
+
+document.addEventListener('keyup', (event) => {
+  if (event.key.toLowerCase() === 'w') keys.w = false;
+  if (event.key.toLowerCase() === 's') keys.s = false;
+});
+
+function updateSpeed() {
+  const resistance = (speed / maxSpeed) ** 2;
+
+  if (keys.w) {
+    const accel = 0.0018 * (1 - resistance); // softer acceleration curve
+    speed += accel;
+  } else if (keys.s) {
+    const brake = 0.0025 + 0.003 * resistance; // slower but steady braking
+    speed -= brake;
+  } else {
+    const coastDrag = 0.00025 + 0.0025 * resistance; // gentle drag
+    speed -= coastDrag;
+  }
+
+  speed = Math.max(minSpeed, Math.min(maxSpeed, speed));
+}
+
+const needle = document.getElementById('needle');
+const speedLabel = document.getElementById('speedLabel');
 
 function animate() {
+
+  const kmh = speed * 100;
+  const angle = -90 + (kmh / 270) * 180;
+  needle.style.transform = `rotate(${angle}deg)`;
+  speedLabel.innerText = `${Math.round(kmh)} km/h`;
+
+  updateSpeed();
+
   // Day-Night cycle rotation
-  sunAngle += 0.001;
+  sunAngle += 0.0005;
   const x = sunRadius * Math.cos(sunAngle);
   const y = sunRadius * Math.sin(sunAngle);
   sun.position.set(x, y, 0);
-  sun.intensity = Math.max(0.1, y / sunRadius);
   sun.color.setHSL(0.1, 1, Math.max(0.2, y / sunRadius));
+
+  // Position moon opposite the sun but offset (appears in front and above car)
+  const moonX = -sunRadius * Math.cos(sunAngle) + 30;
+  const moonY = -sunRadius * Math.sin(sunAngle) + 40;
+  const moonZ = 100;
+  moon.position.set(moonX, moonY, moonZ);
+
+  // Adjust moon intensity based on time of day
+  sun.intensity = Math.max(0.1, y / sunRadius);
+  moon.intensity = Math.max(0.1, -y / sunRadius);
 
   requestAnimationFrame(animate);
 
