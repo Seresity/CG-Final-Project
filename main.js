@@ -128,7 +128,7 @@ function spawnEnvObject(model, x, y, z, scale = 3, rotationY = 0) {
   return obj;
 }
 
-// Load car model
+// === CAR MODEL & HEADLIGHTS ===
 let car = null;
 const loader = new GLTFLoader();
 loader.load(
@@ -137,58 +137,82 @@ loader.load(
     car = gltf.scene;
     car.scale.set(100, 100, 100);
     car.position.y = 0.2;
-    car.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
-    scene.add(car);
-
-    // Add headlights
-    const headlightLeft = new THREE.SpotLight(0xffffff, 3, 100, THREE.MathUtils.degToRad(35), 0.2, 2);
-    const headlightRight = new THREE.SpotLight(0xffffff, 3, 100, THREE.MathUtils.degToRad(35), 0.2, 2);
-
-    headlightLeft.position.set(0.85, 0.65, 2.25);          
-    headlightRight.position.set(-0.85, 0.65, 2.25);
-
-    // Create and position targets
-    const headlightLeftTarget = new THREE.Object3D();
-    headlightLeftTarget.position.set(1, 0.1, 15);
-    const headlightRightTarget = new THREE.Object3D();
-    headlightRightTarget.position.set(-1, 0.1, 15);
-
-    // Assign targets
-    headlightLeft.target = headlightLeftTarget;
-    headlightRight.target = headlightRightTarget;
-
-    headlightLeft.visible = false;
-    headlightRight.visible = false;
-
-    car.add(headlightLeft);
-    car.add(headlightLeft.target);
-    car.add(headlightRight);
-    car.add(headlightRight.target);
-
-    // Add taillights
-    const taillightLeft = new THREE.SpotLight(0xFF0000, 0.25, 200, Math.PI / 2, 0.075, 2);
-    const taillightRight = new THREE.SpotLight(0xFF0000, 0.25, 200, Math.PI / 2, 0.075, 2);
-
-    taillightLeft.target.position.set(0.65, 1, -3);
-    taillightLeft.target.position.set(0.65, 1, -2.5);
-
-    taillightRight.target.position.set(-0.65, 1, -3);
-    taillightRight.target.position.set(-0.65, 1, -2.5);
-
-    taillightLeft.visible = true;
-    taillightRight.visible = true;
-
-    car.add(taillightLeft);
-    car.add(taillightRight);
-
-    let lightsOn = false;
-    lightToggleBtn.addEventListener('click', () => {
-      lightsOn = !lightsOn;
-      headlightLeft.visible = lightsOn;
-      headlightRight.visible = lightsOn;
+    // Apply shadows and look for headlight meshes
+    car.traverse(n => {
+      if (n.isMesh) {
+        n.castShadow = true;
+        n.receiveShadow = true;
+      }
     });
 
-    console.log(gltf.scene);
+    // === Utility: Add lights + targets ===
+    function createSpotlight({ color, intensity, distance, angle, penumbra, decay }, position, targetPos) {
+      const light = new THREE.SpotLight(color, intensity, distance, angle, penumbra, decay);
+      light.position.copy(position);
+      light.castShadow = true;
+
+      const target = new THREE.Object3D();
+      target.position.copy(targetPos);
+      light.target = target;
+
+      scene.add(light, target);
+      return light;
+    }
+
+    // === Headlight Indicators (Pointing at Actual Headlights) ===
+    const lightLeft = createSpotlight(
+      { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
+      new THREE.Vector3(0.855, 0.545, car.position.z + 2.25),
+      new THREE.Vector3(0.85, 0.625, car.position.z + 2.15)
+    );
+
+    const lightRight = createSpotlight(
+      { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
+      new THREE.Vector3(-0.855, 0.545, car.position.z + 2.25),
+      new THREE.Vector3(-0.85, 0.625, car.position.z + 2.15)
+    );
+
+    // === Functional Headlights ===
+    const headlightLeft = createSpotlight(
+      { color: 0xffffff, intensity: 3, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+      new THREE.Vector3(0.75, 1, car.position.z + 1.55),
+      new THREE.Vector3(0.85, 0.1, car.position.z + 25)
+    );
+
+    const headlightRight = createSpotlight(
+      { color: 0xffffff, intensity: 3, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+      new THREE.Vector3(-0.75, 1, car.position.z + 1.55),
+      new THREE.Vector3(-0.85, 0.1, car.position.z + 25)
+    );
+
+    // === Taillights ===
+    const taillightLeft = createSpotlight(
+      { color: 0xff0000, intensity: 10, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(0.85, 0.7, car.position.z - 2.25),
+      new THREE.Vector3(0.75, 0.7, car.position.z - 2.3)
+    );
+
+    const taillightRight = createSpotlight(
+      { color: 0xff0000, intensity: 10, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(-0.85, 0.7, car.position.z - 2.25),
+      new THREE.Vector3(-0.75, 0.7, car.position.z - 2.3)
+    );
+
+    const taillightMiddle = createSpotlight(
+      { color: 0xff0000, intensity: 10, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(0, 0.725, car.position.z - 2.25),
+      new THREE.Vector3(0, 0.725, car.position.z - 2.3)
+    );
+    scene.add(car);
+
+    let lightsOn = true;
+    lightToggleBtn.addEventListener('click', () => {
+      lightsOn = !lightsOn;
+      [lightLeft, lightRight, headlightLeft, headlightRight].forEach(light => {
+        light.visible = lightsOn;
+      });
+      lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
+    });
   },
   undefined,
   function (error) {
