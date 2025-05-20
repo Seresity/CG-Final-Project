@@ -4,7 +4,6 @@ import { GLTFLoader } from './build/GLTFLoader.js';
 
 // === SCENE SETUP ===
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
 const hemiLight = new THREE.HemisphereLight(0xaaaaaa, 0x444444, 0.3);
 scene.add(hemiLight);
 
@@ -17,6 +16,16 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+const dayColor = new THREE.Color(0x87ceeb);
+const nightColor = new THREE.Color(0x000010);
+
+function updateSkyColor() {
+  const t = Math.max(0, sun.position.y / sunRadius);
+  const currentColor = nightColor.clone().lerp(dayColor, t);
+  scene.background = currentColor;
+}
+
 
 // === CAMERA CONTROLS ===
 let isFreeCamera = false;
@@ -64,7 +73,7 @@ sun.shadow.mapSize.width = 2048;
 sun.shadow.mapSize.height = 2048;
 scene.add(sun);
 const sunRadius = 100;
-let sunAngle = 0;
+let sunAngle = Math.PI / 2;
 
 // === LOADING ===
 const loadingDiv = document.getElementById('loading');
@@ -113,18 +122,31 @@ function spawnGrassPatch(group, x, y, z, baseScale) {
     blade.position.set(x + offsetX, y, z + offsetZ);
     blade.scale.setScalar(scale);
     blade.rotation.y = Math.random() * Math.PI * 2;
-    blade.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+    blade.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          dynamicEnvMeshes.push(child); // Track it
+        }
+      });
     group.add(blade);
   }
 }
 
+const dynamicEnvMeshes = [];
 function spawnEnvObject(model, x, y, z, scale = 3, rotationY = 0) {
   if (!model) return null;
   const obj = model.clone();
   obj.position.set(x, y, z);
   obj.scale.setScalar(scale);
   obj.rotation.y = rotationY;
-  obj.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  obj.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      dynamicEnvMeshes.push(child);
+    }
+  });
   return obj;
 }
 
@@ -159,47 +181,47 @@ loader.load(
       return light;
     }
 
-    // === Headlight Indicators (Pointing at Actual Headlights) ===
+    // === Headlight Indicators ===
     const lightLeft = createSpotlight(
-      { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
+      { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
       new THREE.Vector3(0.855, 0.545, car.position.z + 2.25),
       new THREE.Vector3(0.85, 0.625, car.position.z + 2.15)
     );
 
     const lightRight = createSpotlight(
-      { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
+      { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
       new THREE.Vector3(-0.855, 0.545, car.position.z + 2.25),
       new THREE.Vector3(-0.85, 0.625, car.position.z + 2.15)
     );
 
     // === Functional Headlights ===
     const headlightLeft = createSpotlight(
-      { color: 0xffffff, intensity: 3, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+      { color: 0xffffff, intensity: 2, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
       new THREE.Vector3(0.75, 1, car.position.z + 1.55),
       new THREE.Vector3(0.85, 0.1, car.position.z + 25)
     );
 
     const headlightRight = createSpotlight(
-      { color: 0xffffff, intensity: 3, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+      { color: 0xffffff, intensity: 2, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
       new THREE.Vector3(-0.75, 1, car.position.z + 1.55),
       new THREE.Vector3(-0.85, 0.1, car.position.z + 25)
     );
 
     // === Taillights ===
     const taillightLeft = createSpotlight(
-      { color: 0xff0000, intensity: 10, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      { color: 0xff0000, intensity: 5, distance: 0.1, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(0.85, 0.7, car.position.z - 2.25),
       new THREE.Vector3(0.75, 0.7, car.position.z - 2.3)
     );
 
     const taillightRight = createSpotlight(
-      { color: 0xff0000, intensity: 10, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      { color: 0xff0000, intensity: 5, distance: 0.1, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(-0.85, 0.7, car.position.z - 2.25),
       new THREE.Vector3(-0.75, 0.7, car.position.z - 2.3)
     );
 
     const taillightMiddle = createSpotlight(
-      { color: 0xff0000, intensity: 10, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      { color: 0xff0000, intensity: 5, distance: 0.1, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(0, 0.725, car.position.z - 2.25),
       new THREE.Vector3(0, 0.725, car.position.z - 2.3)
     );
@@ -220,10 +242,10 @@ loader.load(
   }
 );
 
-// --- Road Decoration Setup ---
-const roadSegmentLength = 30;
+// === Road Decoration Setup ===
+const roadSegmentLength = 60;
 const roadWidth = 10;
-const visibleSegments = 20;
+const visibleSegments = 15;
 const roadSegments = [];
 const overlapPercent = 0.1;
 const overlapLength = roadSegmentLength * overlapPercent;
@@ -265,12 +287,14 @@ function createRoadSegment(z) {
   group.add(road);
 
   // Side tiles with environment decorations
+  const sideTileWidth = roadWidth * 2;
   for (let i = 1; i <= 2; i++) {
-    const offset = roadWidth * i;
+    const offset = roadWidth / 2 + sideTileWidth * i - sideTileWidth / 2;
     const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: soilTexture });
 
     const createSide = (xOffset) => {
-      const side = new THREE.Mesh(roadGeometry.clone(), sideMaterial);
+      const sideGeometry = new THREE.BoxGeometry(sideTileWidth, 0.1, roadSegmentLength);
+      const side = new THREE.Mesh(sideGeometry, sideMaterial);
 
       side.position.set(xOffset, 0.125, 0);
       side.castShadow = true;
@@ -280,7 +304,7 @@ function createRoadSegment(z) {
       const numObjects = 2 + Math.floor(Math.random() * 3);
       for (let j = 0; j < numObjects; j++) {
         const randZ = (Math.random() - 0.5) * roadSegmentLength;
-        const offsetX = xOffset + (Math.random() - 0.5) * roadWidth * 0.9;
+        const offsetX = xOffset + (Math.random() - 0.5) * sideTileWidth * 0.9;
         const randType = Math.random();
 
         let treePosX;
@@ -320,13 +344,14 @@ function createRoadSegment(z) {
 }
 
 // === Speed Control ===
-let speed = 1;
-const maxSpeed = 2.5;
+let speed = 2;
+const maxSpeed = 5;
 const minSpeed = 0.1;
 
 const keys = {
   w: false,
-  s: false
+  s: false, 
+  shift: false
 };
 
 // Key press handling
@@ -334,20 +359,23 @@ document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
   if (key === 'w') keys.w = true;
   if (key === 's') keys.s = true;
+  if (e.key === 'Shift') keys.shift = true;
 });
 
 document.addEventListener('keyup', (e) => {
   const key = e.key.toLowerCase();
   if (key === 'w') keys.w = false;
   if (key === 's') keys.s = false;
+  if (e.key === 'Shift') keys.shift = false;
 });
 
 // Update speed based on input and resistance
 function updateSpeed() {
-  const resistance = (speed / maxSpeed) ** 1.75;
+  const resistance = (speed / maxSpeed) ** 2;
 
   if (keys.w) {
-    speed += 0.002 * (1 - resistance); // Acceleration
+    const boost = keys.shift ? 5 : 1.5;
+    speed += boost * 0.0015 * (1 - resistance); // Acceleration
   } else if (keys.s) {
     speed -= 0.0025 + 0.006 * resistance; // Braking
   } else {
@@ -362,46 +390,64 @@ const needle = document.getElementById('needle');
 const speedLabel = document.getElementById('speedLabel');
 
 function animate() {
+  requestAnimationFrame(animate);
 
-  const kmh = speed * 100;
+  // === Update Sky and Light ===
+  updateSkyColor();
+
+  sunAngle += 0.0005;
+  const sunX = sunRadius * Math.cos(sunAngle);
+  const sunY = sunRadius * Math.sin(sunAngle);
+  sun.position.set(sunX, sunY, 0);
+  sun.color.setHSL(0.1, 1, Math.max(0.2, sunY / sunRadius));
+
+  // Moon (opposite side of sun)
+  moon.position.set(-sunX + 30, -sunY + 40, 100);
+
+  // Adjust light intensities
+  const lightFactor = Math.max(0.1, sunY / sunRadius);
+  sun.intensity = lightFactor;
+  moon.intensity = Math.max(0.1, -sunY / sunRadius);
+
+  // === Day/Night UI Pointer ===
+  const normalized = (Math.cos(sunAngle) + 1) / 2;
+  dayNightPointer.style.left = `${normalized * 100}%`;
+
+  // === Update Speedometer ===
+  const kmh = speed * 50;
   const angle = -90 + (kmh / 270) * 180;
   needle.style.transform = `rotate(${angle}deg)`;
   speedLabel.innerText = `${Math.round(kmh)} km/h`;
 
   updateSpeed();
 
-  // Day-Night cycle rotation
-  sunAngle += 0.0005;
-  const x = sunRadius * Math.cos(sunAngle);
-  const y = sunRadius * Math.sin(sunAngle);
-  sun.position.set(x, y, 0);
-  sun.color.setHSL(0.1, 1, Math.max(0.2, y / sunRadius));
+  // === Environment Lighting Adjustment ===
+  dynamicEnvMeshes.forEach(mesh => {
+    if (!mesh.material?.color) return;
 
-  // Position moon opposite the sun but offset (appears in front and above car)
-  const moonX = -sunRadius * Math.cos(sunAngle) + 30;
-  const moonY = -sunRadius * Math.sin(sunAngle) + 40;
-  const moonZ = 100;
-  moon.position.set(moonX, moonY, moonZ);
+    const dayColor = new THREE.Color(0xffffff);
+    const nightColor = new THREE.Color(0x111111);
+    mesh.material.color.lerpColors(nightColor, dayColor, lightFactor);
 
-  // Adjust moon intensity based on time of day
-  sun.intensity = Math.max(0.1, y / sunRadius);
-  moon.intensity = Math.max(0.1, -y / sunRadius);
+    if (mesh.material.emissive) {
+      mesh.material.emissive.set(0x111133);
+      mesh.material.emissiveIntensity = 0.2 * (1 - lightFactor);
+    }
+  });
 
-  requestAnimationFrame(animate);
-
+  // === Car & Road Logic ===
   if (car) {
-    car.position.z = 0; // Fixed car
+    car.position.z = 0;
 
-    // Move road segments to simulate motion
     for (let segment of roadSegments) {
       segment.position.z -= speed;
     }
 
-    // Recycle segments
     while (roadSegments.length && roadSegments[0].position.z < -roadSegmentLength * 1.5) {
       const oldSegment = roadSegments.shift();
       scene.remove(oldSegment);
     }
+
     const lastSegment = roadSegments[roadSegments.length - 1];
     if (lastSegment && lastSegment.position.z < roadSegmentLength * (visibleSegments - 1)) {
       const newZ = lastSegment.position.z + roadSegmentLength - overlapLength;
@@ -414,9 +460,10 @@ function animate() {
     } else {
       camera.position.set(car.position.x, car.position.y + 2.5, car.position.z - 7.5);
       camera.lookAt(car.position);
-    }    
+    }
   }
 
+  // === Render Scene ===
   renderer.render(scene, camera);
 }
 

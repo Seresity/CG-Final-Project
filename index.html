@@ -1,19 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Endless Drive</title>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <script type="module" src="main.js"></script>
-    <button id="toggleCameraBtn">Enter Free Camera</button>
-    <button id="lightToggleBtn">Turn Lights On</button>
+<head>
+  <meta charset="UTF-8" />
+  <title>Endless Drive</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Segoe UI', sans-serif;
+    }
 
-    <div id="loading" style="
+    canvas { display: block; }
+
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .hud {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      pointer-events: auto;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 14px;
+      background-color: #1e1e1e;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #333;
+    }
+
+    .speed-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border: 2px solid #888;
+      border-radius: 50%;
+      background: radial-gradient(#111, #222);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-size: 12px;
+      color: #fff;
+    }
+
+    #needle {
+      position: absolute;
+      width: 2px;
+      height: 45%;
+      background: red;
+      transform-origin: bottom center;
+      transform: rotate(-90deg);
+      top: 5%;
+      left: 49%;
+    }
+
+    #speedLabel {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      font-family: monospace;
+    }
+
+    #dayNightBar {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 10px;
+      background: linear-gradient(to right, #000011, #001133, #2a64cc, #e9e6a5, #ffa94d, #2a64cc, #001133, #000011);
+      border: 1px solid #444;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    #dayNightPointer {
+      position: absolute;
+      width: 4px;
+      height: 100%;
+      background: white;
+      transition: left 0.1s ease;
+    }
+
+    #keyHints {
+      position: absolute;
+      right: 20px;
+      bottom: 30px;
+      text-align: right;
+      color: #ccc;
+      font-size: 14px;
+      font-family: monospace;
+      line-height: 1.4;
+      background-color: rgba(0,0,0,0.4);
+      padding: 10px 15px;
+      border-radius: 8px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" style="
       position: absolute;
       top: 50%;
       left: 50%;
@@ -28,43 +140,32 @@
     ">
       Loading...
     </div>
-    
-    <div id="speedometer" style="
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      background: radial-gradient(ellipse at center, #222 60%, #111 100%);
-      border: 4px solid #aaa;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      overflow: hidden;
-    ">
-      <div id="needle" style="
-        position: absolute;
-        width: 4px;
-        height: 60px;
-        background: red;
-        transform-origin: bottom center;
-        transform: rotate(-90deg);
-        bottom: 50%;
-        left: 50%;
-        margin-left: -2px;
-      "></div>
-      <div id="speedLabel" style="
-        position: absolute;
-        bottom: 25px;
-        width: 100%;
-        text-align: center;
-        color: white;
-        font-family: monospace;
-        font-size: 16px;
-      ">0 km/h</div>
+
+  <div id="ui">
+    <div class="hud">
+      <div class="speed-container">
+        <div id="needle"></div>
+        <div id="speedLabel">0 km/h</div>
+      </div>
+      <div class="button-group">
+        <button id="toggleCameraBtn">Enter Free Camera</button>
+        <button id="lightToggleBtn">Turn Lights Off</button>
+      </div>
     </div>
-  </body> 
+
+    <div id="dayNightBar">
+      <div id="dayNightPointer"></div>
+    </div>
+
+    <div id="keyHints">
+      <b>Controls:</b><br>
+      W / S - Accelerate / Brake<br>
+      Shift + W - Boost<br>
+      Mouse - Look<br>
+      Click & Hold to Rotate
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
 </html>
