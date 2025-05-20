@@ -1,0 +1,458 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 58,
+      "max": [
+        1.1257436275482178,
+        1.8142540454864502,
+        1.5853818655014038
+      ],
+      "min": [
+        -1.0042856931686401,
+        -2.003352642059326,
+        -1.063025712966919
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 696,
+      "componentType": 5126,
+      "count": 58,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 58,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 108,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 1392,
+      "componentType": 5126,
+      "count": 94,
+      "max": [
+        2.0652592182159424,
+        1.5823729038238525,
+        1.1244323253631592
+      ],
+      "min": [
+        -1.8686580657958984,
+        -2.2201006412506104,
+        -0.870541512966156
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 2520,
+      "componentType": 5126,
+      "count": 94,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 464,
+      "componentType": 5126,
+      "count": 94,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 432,
+      "componentType": 5125,
+      "count": 162,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 3648,
+      "componentType": 5126,
+      "count": 130,
+      "max": [
+        1.7028446197509766,
+        2.039839267730713,
+        1.1637253761291504
+      ],
+      "min": [
+        -1.700486183166504,
+        -2.635796070098877,
+        -0.8300873637199402
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 5208,
+      "componentType": 5126,
+      "count": 130,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1216,
+      "componentType": 5126,
+      "count": 130,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 1080,
+      "componentType": 5125,
+      "count": 216,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 6768,
+      "componentType": 5126,
+      "count": 122,
+      "max": [
+        1.7279560565948486,
+        2.1565470695495605,
+        1.0851335525512695
+      ],
+      "min": [
+        -1.7491111755371094,
+        -1.859674096107483,
+        -0.9086791276931763
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 8232,
+      "componentType": 5126,
+      "count": 122,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 2256,
+      "componentType": 5126,
+      "count": 122,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 1944,
+      "componentType": 5125,
+      "count": 216,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "generator": "fab-model-conversion",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 2808,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3232,
+      "byteOffset": 2808,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 9696,
+      "byteOffset": 6040,
+      "byteStride": 12,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 15736,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Material.001_baseColor.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Material.001",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.8211145618000169
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cone_Material.001_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Cone.002_Material.001_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 5,
+            "POSITION": 4,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Cone.006_Material.001_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 9,
+            "POSITION": 8,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Cone.011_Material.001_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 13,
+            "POSITION": 12,
+            "TEXCOORD_0": 14
+          },
+          "indices": 15,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "FAB converted model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.009999999776482582,
+        0.0,
+        0.0,
+        -0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "5cc180632ed84a31b79ac89fac2b27ca.fbx"
+    },
+    {
+      "children": [
+        3,
+        5,
+        7,
+        9
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4
+      ],
+      "matrix": [
+        4.931578636169434,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -6.259938453174672e-07,
+        -3.8423228263854474,
+        0.0,
+        0.0,
+        12.919710159301587,
+        -2.104887956698989e-06,
+        0.0,
+        0.6818416714668274,
+        19.157365798950195,
+        34.12489700317383,
+        1.0
+      ],
+      "name": "Cone"
+    },
+    {
+      "mesh": 0,
+      "name": "Cone_Material.001_0"
+    },
+    {
+      "children": [
+        6
+      ],
+      "matrix": [
+        4.931578636169434,
+        0.0,
+        0.0,
+        0.0,
+        -0.0,
+        -6.259938453174672e-07,
+        -3.8423228263854474,
+        0.0,
+        0.0,
+        17.161420822143327,
+        -2.79595033967275e-06,
+        0.0,
+        -0.1258506029844284,
+        20.34322738647461,
+        6.160091400146484,
+        1.0
+      ],
+      "name": "Cone.002"
+    },
+    {
+      "mesh": 1,
+      "name": "Cone.002_Material.001_0"
+    },
+    {
+      "children": [
+        8
+      ],
+      "matrix": [
+        3.124091169000978,
+        1.7795518476072546e-07,
+        -3.8158246172188233,
+        0.0,
+        -2.973009950220913,
+        -3.3730254378984144e-07,
+        -2.4340621130556066,
+        0.0,
+        -1.557983374580479e-06,
+        17.161420822143477,
+        -4.752100705058053e-07,
+        0.0,
+        0.55963134765625,
+        19.668903350830078,
+        -23.13602066040039,
+        1.0
+      ],
+      "name": "Cone.006"
+    },
+    {
+      "mesh": 2,
+      "name": "Cone.006_Material.001_0"
+    },
+    {
+      "children": [
+        10
+      ],
+      "matrix": [
+        3.093911085842212,
+        5.475152149624833e-16,
+        -3.840336188099349,
+        0.0,
+        -2.9921072745171355,
+        2.900873213989648e-07,
+        -2.4105477784327265,
+        0.0,
+        1.0089540613313276e-06,
+        17.16142082214351,
+        8.128491907182234e-07,
+        0.0,
+        0.7561787962913513,
+        21.01764678955078,
+        -53.321624755859375,
+        1.0
+      ],
+      "name": "Cone.011"
+    },
+    {
+      "mesh": 3,
+      "name": "Cone.011_Material.001_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "FAB converted",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ]
+}

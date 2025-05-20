@@ -2,6 +2,7 @@ import * as THREE from './build/three.module.js';
 import { OrbitControls } from './build/OrbitControls.js';
 import { GLTFLoader } from './build/GLTFLoader.js';
 
+// === SCENE SETUP ===
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 const hemiLight = new THREE.HemisphereLight(0xaaaaaa, 0x444444, 0.3);
@@ -17,14 +18,14 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// OrbitControls setup
+// === CAMERA CONTROLS ===
 let isFreeCamera = false;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.enablePan = true;
 controls.enableZoom = true;
-controls.enabled = false; // start disabled
+controls.enabled = false;
 
 const toggleCameraBtn = document.getElementById('toggleCameraBtn');
 toggleCameraBtn.addEventListener('click', () => {
@@ -47,40 +48,88 @@ lightToggleBtn.addEventListener('click', () => {
 });
 ;
 
-// Add ambient lighting
-const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+// === LIGHT SETUP ===
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambientLight);
 
-// Add moonlight (bluish directional light)
 const moon = new THREE.DirectionalLight(0x8899ff, 0.2);
 moon.castShadow = true;
 scene.add(moon);
 
 const sun = new THREE.DirectionalLight(0xffffff, 10);
-
-sun.position.set(0, 50, -50);
-// sun.target.position.set(0, 0, 0);
-scene.add(sun.target);
+sun.position.set(100, 100, 0);
+sun.castShadow = true;
 sun.shadow.bias = -0.001;
 sun.shadow.mapSize.width = 2048;
 sun.shadow.mapSize.height = 2048;
-sun.position.set(100, 100, 0);
-sun.castShadow = true;
 scene.add(sun);
-
 const sunRadius = 100;
 let sunAngle = 0;
 
-const boxGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1); // width, height, depth
-const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-const box = new THREE.Mesh(boxGeometry, boxMaterial);
+// === LOADING ===
+const loadingDiv = document.getElementById('loading');
+let itemsToLoad = 4;
+let itemsLoaded = 0;
+function itemLoaded() {
+  itemsLoaded++;
+  if (itemsLoaded >= itemsToLoad) {
+    loadingDiv.style.display = 'none';
+    for (let i = 0; i < visibleSegments; i++) {
+      const zPos = i * (roadSegmentLength - overlapLength);
+      createRoadSegment(zPos);
+    }
+  }
+}
 
-box.position.set(0.65, 1, -2.75); // X, Y, Z — lifts it 0.5 above ground
-scene.add(box);
+// === SOIL ===
+let soilTexture = null;
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load('textures/TCOM_Sand_Muddy2_2x2_2K_albedo.png', texture => {
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(4, 4);
+  soilTexture = texture;
+  itemLoaded();
+});
 
-let car = null;
+const gltfLoader = new GLTFLoader();
+gltfLoader.load('models/lowpoly_pine_tree/scene.gltf', gltf => { treeModel = gltf.scene; itemLoaded(); });
+gltfLoader.load('models/lowpoly_rocks/scene.gltf', gltf => { rockModel = gltf.scene; itemLoaded(); });
+gltfLoader.load('models/lowpoly_grass/scene.gltf', gltf => { grassModel = gltf.scene; itemLoaded(); });
+
+let treeModel, rockModel, grassModel = null;
+gltfLoader.load('models/lowpoly_pine_tree/scene.gltf', gltf => { treeModel = gltf.scene; });
+gltfLoader.load('models/lowpoly_rocks/scene.gltf', gltf => { rockModel = gltf.scene; });
+gltfLoader.load('models/lowpoly_grass/scene.gltf', gltf => { grassModel = gltf.scene; });
+
+function spawnGrassPatch(group, x, y, z, baseScale) {
+  if (!grassModel) return;
+  const patchSize = 5;
+  const numBlades = Math.floor(Math.random() * 5);
+  for (let i = 0; i < numBlades; i++) {
+    const offsetX = (Math.random() - 0.5) * patchSize;
+    const offsetZ = (Math.random() - 0.5) * patchSize;
+    const scale = baseScale * (1.5 + Math.random());
+    const blade = grassModel.clone();
+    blade.position.set(x + offsetX, y, z + offsetZ);
+    blade.scale.setScalar(scale);
+    blade.rotation.y = Math.random() * Math.PI * 2;
+    blade.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+    group.add(blade);
+  }
+}
+
+function spawnEnvObject(model, x, y, z, scale = 3, rotationY = 0) {
+  if (!model) return null;
+  const obj = model.clone();
+  obj.position.set(x, y, z);
+  obj.scale.setScalar(scale);
+  obj.rotation.y = rotationY;
+  obj.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  return obj;
+}
 
 // Load car model
+let car = null;
 const loader = new GLTFLoader();
 loader.load(
   '../cars/Dodge SRT Tomahawk/source/dodge_srt_tomahawk_x.glb',
@@ -92,14 +141,21 @@ loader.load(
     scene.add(car);
 
     // Add headlights
-    const headlightLeft = new THREE.SpotLight(0xffffff, 1.5, 200, Math.PI / 2, 0.075, 2);
-    const headlightRight = new THREE.SpotLight(0xffffff, 1.5, 200, Math.PI / 2, 0.075, 2);
+    const headlightLeft = new THREE.SpotLight(0xffffff, 3, 100, THREE.MathUtils.degToRad(35), 0.2, 2);
+    const headlightRight = new THREE.SpotLight(0xffffff, 3, 100, THREE.MathUtils.degToRad(35), 0.2, 2);
 
-    headlightLeft.target.position.set(0.85, 0.65, 2.25);          
-    headlightLeft.target.position.set(1, 0.1, 15);
+    headlightLeft.position.set(0.85, 0.65, 2.25);          
+    headlightRight.position.set(-0.85, 0.65, 2.25);
 
-    headlightRight.target.position.set(-0.85, 0.65, 2.25);
-    headlightRight.target.position.set(-1, 0.1, 15);
+    // Create and position targets
+    const headlightLeftTarget = new THREE.Object3D();
+    headlightLeftTarget.position.set(1, 0.1, 15);
+    const headlightRightTarget = new THREE.Object3D();
+    headlightRightTarget.position.set(-1, 0.1, 15);
+
+    // Assign targets
+    headlightLeft.target = headlightLeftTarget;
+    headlightRight.target = headlightRightTarget;
 
     headlightLeft.visible = false;
     headlightRight.visible = false;
@@ -140,25 +196,27 @@ loader.load(
   }
 );
 
-// Road logic
+// --- Road Decoration Setup ---
 const roadSegmentLength = 30;
 const roadWidth = 10;
 const visibleSegments = 20;
 const roadSegments = [];
-let lastZ = 0;
+const overlapPercent = 0.1;
+const overlapLength = roadSegmentLength * overlapPercent;
 
 function createRoadSegment(z) {
-  const geometry = new THREE.BoxGeometry(roadWidth, 0.1, roadSegmentLength, 64, 1, 64);
-  
+  const group = new THREE.Group();
+  group.position.z = z;
+
+  // Center road with full material setup
+  const roadGeometry = new THREE.BoxGeometry(roadWidth, 0.1, roadSegmentLength);
   const textureLoader = new THREE.TextureLoader();
 
-  // Load maps
   const roadColorMap = textureLoader.load('../textures/road_diffuse.png');
   const roadNormalMap = textureLoader.load('../textures/road_normal.png');
   const roadBumpMap = textureLoader.load('../textures/road_bump.png');
   const roadDisplacementMap = textureLoader.load('../textures/road_displacement.png');
 
-  // Set wrap mode for seamless tiling
   [roadColorMap, roadNormalMap, roadBumpMap, roadDisplacementMap].forEach(tex => {
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(1, 1);
@@ -176,54 +234,106 @@ function createRoadSegment(z) {
     metalness: 0.1
   });
 
-    const material = roadMaterial;
-    const segment = new THREE.Mesh(geometry, material);
-    segment.position.set(0, 0, z);
-    segment.castShadow = true;
-    segment.receiveShadow = true;
-    scene.add(segment);
-    roadSegments.push(segment);
+  const road = new THREE.Mesh(roadGeometry, roadMaterial);
+  road.castShadow = true;
+  road.receiveShadow = true;
+  road.position.set(0, 0, 0);
+  group.add(road);
+
+  // Side tiles with environment decorations
+  for (let i = 1; i <= 2; i++) {
+    const offset = roadWidth * i;
+    const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: soilTexture });
+
+    const createSide = (xOffset) => {
+      const side = new THREE.Mesh(roadGeometry.clone(), sideMaterial);
+
+      side.position.set(xOffset, 0.125, 0);
+      side.castShadow = true;
+      side.receiveShadow = true;
+      group.add(side);
+
+      const numObjects = 2 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < numObjects; j++) {
+        const randZ = (Math.random() - 0.5) * roadSegmentLength;
+        const offsetX = xOffset + (Math.random() - 0.5) * roadWidth * 0.9;
+        const randType = Math.random();
+
+        let treePosX;
+        if (Math.random() < 0.5) {
+          treePosX = 20 + Math.random() * 10;
+        } else {
+          treePosX = 0 - Math.random() * 5; 
+        }
+        
+        const treePosY = 3.5;
+        const treeScale = 0.03;
+        const treePosZ = (Math.random() - 0.5) * 10;
+
+        if (randType < 0.1 && treeModel) {
+          const scale = 0.1 + Math.random() * 0.2;
+          const rot = (Math.random() - 0.5) * 0.3;
+          const tree = spawnEnvObject(treeModel, treePosX, treePosY, treePosZ, treeScale * (1 + Math.random() * 0.4), rot);
+          if (tree) group.add(tree);
+         }
+         else if (randType < 0.5 && rockModel) {
+          const scale = 0.1 + Math.random() * 0.4;
+          const rot = Math.random() * Math.PI * 2;
+          const rock = spawnEnvObject(rockModel, offsetX, 0, randZ, scale, rot);
+          if (rock) group.add(rock);
+        } else if (grassModel) {
+          const baseScale = 0.3 + Math.random() * 0.3;
+          spawnGrassPatch(group, xOffset, 0, randZ, baseScale);
+        }
+      }
+    };
+    createSide(-offset);
+    createSide(offset);
   }
 
-for (let i = 0; i < visibleSegments; i++) {
-  createRoadSegment(i * roadSegmentLength);
-  lastZ = i * roadSegmentLength;
+  scene.add(group);
+  roadSegments.push(group);
 }
 
-// Animate
+// === Speed Control ===
 let speed = 1;
 const maxSpeed = 2.5;
 const minSpeed = 0.1;
 
-const keys = { w: false, s: false };
+const keys = {
+  w: false,
+  s: false
+};
 
-document.addEventListener('keydown', (event) => {
-  if (event.key.toLowerCase() === 'w') keys.w = true;
-  if (event.key.toLowerCase() === 's') keys.s = true;
+// Key press handling
+document.addEventListener('keydown', (e) => {
+  const key = e.key.toLowerCase();
+  if (key === 'w') keys.w = true;
+  if (key === 's') keys.s = true;
 });
 
-document.addEventListener('keyup', (event) => {
-  if (event.key.toLowerCase() === 'w') keys.w = false;
-  if (event.key.toLowerCase() === 's') keys.s = false;
+document.addEventListener('keyup', (e) => {
+  const key = e.key.toLowerCase();
+  if (key === 'w') keys.w = false;
+  if (key === 's') keys.s = false;
 });
 
+// Update speed based on input and resistance
 function updateSpeed() {
-  const resistance = (speed / maxSpeed) ** 2;
+  const resistance = (speed / maxSpeed) ** 1.75;
 
   if (keys.w) {
-    const accel = 0.0018 * (1 - resistance); // softer acceleration curve
-    speed += accel;
+    speed += 0.002 * (1 - resistance); // Acceleration
   } else if (keys.s) {
-    const brake = 0.0025 + 0.003 * resistance; // slower but steady braking
-    speed -= brake;
+    speed -= 0.0025 + 0.006 * resistance; // Braking
   } else {
-    const coastDrag = 0.00025 + 0.0025 * resistance; // gentle drag
-    speed -= coastDrag;
+    speed -= 0.00025 + 0.0025 * resistance; // Coasting drag
   }
 
-  speed = Math.max(minSpeed, Math.min(maxSpeed, speed));
+  speed = THREE.MathUtils.clamp(speed, minSpeed, maxSpeed);
 }
 
+// Dashboard UI
 const needle = document.getElementById('needle');
 const speedLabel = document.getElementById('speedLabel');
 
@@ -264,17 +374,13 @@ function animate() {
     }
 
     // Recycle segments
-    while (roadSegments.length && roadSegments[0].position.z < -roadSegmentLength) {
+    while (roadSegments.length && roadSegments[0].position.z < -roadSegmentLength * 1.5) {
       const oldSegment = roadSegments.shift();
       scene.remove(oldSegment);
-      oldSegment.geometry.dispose();
-      oldSegment.material.dispose();
-    
-      // Determine position of last segment
-      const lastSegment = roadSegments[roadSegments.length - 1];
-      const newZ = lastSegment.position.z + roadSegmentLength;
-    
-      // Create new segment at correct z
+    }
+    const lastSegment = roadSegments[roadSegments.length - 1];
+    if (lastSegment && lastSegment.position.z < roadSegmentLength * (visibleSegments - 1)) {
+      const newZ = lastSegment.position.z + roadSegmentLength - overlapLength;
       createRoadSegment(newZ);
     }
 
@@ -287,24 +393,13 @@ function animate() {
     }    
   }
 
-  if (car && car.position.z + visibleSegments * roadSegmentLength > lastZ) {
-    const lastSegment = roadSegments[roadSegments.length - 1];
-    const newZ = lastSegment.position.z + roadSegmentLength;
-    createRoadSegment(newZ);
-  }
-
-  while (
-    roadSegments.length &&
-    car &&
-    roadSegments[0].position.z + roadSegmentLength < car.position.z - 10
-  ) {
-    const oldSegment = roadSegments.shift();
-    scene.remove(oldSegment);
-    oldSegment.geometry.dispose();
-    oldSegment.material.dispose();
-  }
-
   renderer.render(scene, camera);
 }
 
 animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
