@@ -29,6 +29,7 @@ function updateSkyColor() {
 
 // === CAMERA CONTROLS ===
 let isFreeCamera = false;
+let lightsOn = true;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -56,6 +57,15 @@ lightToggleBtn.addEventListener('click', () => {
   lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
 });
 ;
+
+
+// === weather toggling ===
+let weatherState = "clear";
+
+const toggleWeatherButton = document.getElementById("weatherToggleBtn");
+toggleWeatherButton.addEventListener('click', () => {
+  changeWeather(weatherState);
+});
 
 // === LIGHT SETUP ===
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
@@ -383,6 +393,16 @@ function updateSpeed() {
   }
 
   speed = THREE.MathUtils.clamp(speed, minSpeed, maxSpeed);
+}
+
+// Weather changing via button
+function changeWeather(state) {
+  if (state == "clear") {
+    weatherState = "rainy";
+  }
+  else if (state == "rainy") {
+    weatherState = "clear";
+  }
 }
 
 // Dashboard UI
