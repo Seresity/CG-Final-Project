@@ -1,46 +1,29 @@
+// =============================
+// [SECTION]: Imports 
+// =============================
 import * as THREE from './build/three.module.js';
 import { OrbitControls } from './build/OrbitControls.js';
 import { GLTFLoader } from './build/GLTFLoader.js';
 
-// === SCENE SETUP ===
+// =============================
+// [SECTION]: Scene Initialisation
+// =============================
 const scene = new THREE.Scene();
-const hemiLight = new THREE.HemisphereLight(0xaaaaaa, 0x444444, 0.3);
-scene.add(hemiLight);
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 camera.position.set(0, 5, -10);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const dayColor = new THREE.Color(0x87ceeb);
-const nightColor = new THREE.Color(0x000010);
-const rainColor = new THREE.Color(0x003366);
-let isRaining = false;
-let changeColor;
-
-function updateSkyColor() {
-  const t = Math.max(0, sun.position.y / sunRadius);
-  if (isRaining) {
-    changeColor = rainColor;
-  }
-  else {
-    changeColor = dayColor;
-  }
-  const currentColor = nightColor.clone().lerp(changeColor, t);
-  
-  
-  scene.background = currentColor;
-}
-
-
-// === CAMERA CONTROLS ===
-let isFreeCamera = false;
-let lightsOn = true;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -48,37 +31,12 @@ controls.enablePan = true;
 controls.enableZoom = true;
 controls.enabled = false;
 
-const toggleCameraBtn = document.getElementById('toggleCameraBtn');
-toggleCameraBtn.addEventListener('click', () => {
-  isFreeCamera = !isFreeCamera;
-  controls.enabled = isFreeCamera;
-  toggleCameraBtn.textContent = isFreeCamera ? 'Exit Free Camera' : 'Enter Free Camera';
-  if (isFreeCamera && car) {
-    controls.target.copy(car.position);
-  }
-});
+// =============================
+// [SECTION]: LIGHT SETUP
+// =============================
+const hemiLight = new THREE.HemisphereLight(0xaaaaaa, 0x444444, 0.3);
+scene.add(hemiLight);
 
-const lightToggleBtn = document.getElementById('lightToggleBtn');
-lightToggleBtn.addEventListener('click', () => {
-  lightsOn = !lightsOn;
-  headlightLeft.visible = lightsOn;
-  headlightRight.visible = lightsOn;
-  taillightLeft.visible = lightsOn;
-  taillightRight.visible = lightsOn;
-  lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
-});
-;
-
-
-// === weather toggling ===
-let weatherState = "clear";
-
-const toggleWeatherButton = document.getElementById("weatherToggleBtn");
-toggleWeatherButton.addEventListener('click', () => {
-  changeWeather(weatherState);
-});
-
-// === LIGHT SETUP ===
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambientLight);
 
@@ -96,7 +54,9 @@ scene.add(sun);
 const sunRadius = 100;
 let sunAngle = Math.PI / 2;
 
-// === LOADING ===
+// =============================
+// [SECTION]: LOADING
+// =============================
 const loadingDiv = document.getElementById('loading');
 let itemsToLoad = 4;
 let itemsLoaded = 0;
@@ -110,6 +70,42 @@ function itemLoaded() {
     }
   }
 }
+
+// =============================
+// [SECTION]: UI Event Handlers 
+// =============================
+let isFreeCamera = false;
+const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+toggleCameraBtn.addEventListener('click', () => {
+  isFreeCamera = !isFreeCamera;
+  controls.enabled = isFreeCamera;
+  toggleCameraBtn.textContent = isFreeCamera ? 'Exit Free Camera' : 'Enter Free Camera';
+  if (isFreeCamera && car) {
+    controls.target.copy(car.position);
+  }
+});
+
+// Sky color control
+const dayColor = new THREE.Color(0x87ceeb);
+const nightColor = new THREE.Color(0x000010);
+const rainColor = new THREE.Color(0x003366);
+
+let isRaining = false;
+let changeColor = dayColor;
+
+function updateSkyColor() {
+  const t = Math.max(0, sun.position.y / sunRadius);
+  changeColor = isRaining ? rainColor : dayColor;
+  scene.background = nightColor.clone().lerp(changeColor, t);
+}
+
+// === weather toggling ===
+let weatherState = "clear";
+
+const toggleWeatherButton = document.getElementById("weatherToggleBtn");
+toggleWeatherButton.addEventListener('click', () => {
+  changeWeather(weatherState);
+});
 
 // === SOIL ===
 let soilTexture = null;
