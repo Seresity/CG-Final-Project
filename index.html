@@ -150,6 +150,7 @@
       <div class="button-group">
         <button id="toggleCameraBtn">Enter Free Camera</button>
         <button id="lightToggleBtn">Turn Lights Off</button>
+        <button id="weatherToggleBtn">Change Weather</button>
       </div>
     </div>
 
@@ -165,6 +166,30 @@
       Click & Hold to Rotate
     </div>
   </div>
+  <!-- <script id="vertexShader" type="x-shader/x-fragment">
+    varying vec2 fragCoord;
+
+    void main() {
+      vec2 q = fragCoord.xy/iResolution.xy;
+      vec2 p = -1.0+2.0*q;
+	    p.x *= iResolution.x/iResolution.y;
+
+      vec3 col = vec3(0.0, 0.0, 0.0);
+    }
+  </script>
+
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    varying vec4 fragColor;
+
+    void main() {
+      vec2 st =  p * vec2(.5, .01)+vec2(iTime*.3-q.y*.6*-0.0, iTime*.3);
+      float f = floor(mod(iTime/9., 2.0));
+	    f = texture(iChannel0, st).y * texture(iChannel0, st*.773).x * 1.55;
+	    f = clamp(pow(abs(f), 23.0) * 13.0, 0.0, q.y*.14);
+	    col += f;
+      fragColor=vec4(col, 1.0 );
+    }
+  </script> -->
 
   <script type="module" src="main.js"></script>
 </body>

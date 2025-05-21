@@ -19,16 +19,28 @@ document.body.appendChild(renderer.domElement);
 
 const dayColor = new THREE.Color(0x87ceeb);
 const nightColor = new THREE.Color(0x000010);
+const rainColor = new THREE.Color(0x003366);
+let isRaining = false;
+let changeColor;
 
 function updateSkyColor() {
   const t = Math.max(0, sun.position.y / sunRadius);
-  const currentColor = nightColor.clone().lerp(dayColor, t);
+  if (isRaining) {
+    changeColor = rainColor;
+  }
+  else {
+    changeColor = dayColor;
+  }
+  const currentColor = nightColor.clone().lerp(changeColor, t);
+  
+  
   scene.background = currentColor;
 }
 
 
 // === CAMERA CONTROLS ===
 let isFreeCamera = false;
+let lightsOn = true;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -56,6 +68,15 @@ lightToggleBtn.addEventListener('click', () => {
   lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
 });
 ;
+
+
+// === weather toggling ===
+let weatherState = "clear";
+
+const toggleWeatherButton = document.getElementById("weatherToggleBtn");
+toggleWeatherButton.addEventListener('click', () => {
+  changeWeather(weatherState);
+});
 
 // === LIGHT SETUP ===
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
@@ -267,7 +288,7 @@ function createRoadSegment(z) {
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(1, 1);
   });
-
+  
   const roadMaterial = new THREE.MeshStandardMaterial({
     color: 0x333333,
     map: roadColorMap,
@@ -385,6 +406,65 @@ function updateSpeed() {
   speed = THREE.MathUtils.clamp(speed, minSpeed, maxSpeed);
 }
 
+let clouds = [];
+
+
+
+function addRain() {
+  textureLoader.load("../textures/smoke.png", function(texture){
+    const cloudGeo = new THREE.PlaneGeometry(500,500);
+    const cloudMaterial = new THREE.MeshLambertMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.2
+    });
+
+    for (let p=0; p<100; p++) {
+      let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
+      cloud.position.set(
+        Math.random()*2400 -1200,
+        400,
+        Math.random()*2000 - 1000
+      );
+      cloud.rotation.x = 90;
+      cloud.rotation.y = 0;
+      cloud.rotation.z = 0;
+      cloud.material.opacity = 0.6;
+      clouds.push(cloud);
+      scene.add(cloud);
+    }
+  });
+  // const material = new THREE.ShaderMaterial({
+  //   vertexShader: document.getElementById('vertexShader').textContent,
+  //   fragmentShader: document.getElementById('fragmentShader').textContent,
+  //   uniforms: uniforms
+    
+  // })
+
+}
+
+function removeRain() {
+  while (clouds.length) {
+    const oldCloud = clouds.shift();
+    scene.remove(oldCloud);
+  }
+  
+}
+
+// Weather changing via button
+function changeWeather(state) {
+  if (state == "clear") {
+    weatherState = "rainy";
+    isRaining = true;
+    addRain();
+  }
+  else if (state == "rainy") {
+    weatherState = "clear";
+    isRaining = false;
+    removeRain();
+  }
+}
+
 // Dashboard UI
 const needle = document.getElementById('needle');
 const speedLabel = document.getElementById('speedLabel');
@@ -394,6 +474,7 @@ function animate() {
 
   // === Update Sky and Light ===
   updateSkyColor();
+  
 
   sunAngle += 0.0005;
   const sunX = sunRadius * Math.cos(sunAngle);
@@ -434,6 +515,20 @@ function animate() {
       mesh.material.emissiveIntensity = 0.2 * (1 - lightFactor);
     }
   });
+
+  // === cloud rotation logic ===
+
+  if (isRaining && clouds.length > 0) {
+    clouds.forEach(p => {
+      //let zRot = p.rotation.z;
+      p.rotation.x = camera.rotation.x;
+      p.rotation.y = camera.rotation.y;
+      p.rotation.z -= 0.002;
+      //zRot -= 0.002;
+      //p.lookAt(camera.position);
+    })
+  }
+  
 
   // === Car & Road Logic ===
   if (car) {
