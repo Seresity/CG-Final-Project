@@ -10,7 +10,7 @@ import { GLTFLoader } from './build/GLTFLoader.js';
 // =============================
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
-  25,
+  45,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
@@ -165,6 +165,10 @@ function changeWeather(state) {
 // =============================
 // [SECTION]: CAR
 // =============================
+let headlightLeft, headlightRight;
+let taillightLeft, taillightRight, taillightMiddle;
+let lightLeft, lightRight;
+let interiorLight;
 let car = null;
 const loader = new GLTFLoader();
 loader.load(
@@ -196,51 +200,51 @@ loader.load(
     }
 
     // === Headlight Indicators ===
-    const lightLeft = createSpotlight(
+    lightLeft = createSpotlight(
       { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
       new THREE.Vector3(car.position.x + 0.855, car.position.y + 0.545, car.position.z + 2.25),
       new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.625, car.position.z + 2.15)
     );
 
-    const lightRight = createSpotlight(
+    lightRight = createSpotlight(
       { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
       new THREE.Vector3(car.position.x - 0.855, car.position.y + 0.545, car.position.z + 2.25),
       new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.625, car.position.z + 2.15)
     );
 
     // === Functional Headlights ===
-    const headlightLeft = createSpotlight(
+    headlightLeft = createSpotlight(
       { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
       new THREE.Vector3(car.position.x + 0.75, car.position.y + 1, car.position.z + 1.55),
       new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.25, car.position.z + 25)
     );
 
-    const headlightRight = createSpotlight(
+    headlightRight = createSpotlight(
       { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
       new THREE.Vector3(car.position.x - 0.75, car.position.y + 1, car.position.z + 1.55),
       new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.25, car.position.z + 25)
     );
 
     // === Taillights ===
-    const taillightLeft = createSpotlight(
+    taillightLeft = createSpotlight(
       { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.7, car.position.z - 2.275),
       new THREE.Vector3(car.position.x + 0.75, car.position.y + 0.7, car.position.z - 2.3)
     );
 
-    const taillightRight = createSpotlight(
+    taillightRight = createSpotlight(
       { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.7, car.position.z - 2.275),
       new THREE.Vector3(car.position.x - 0.75, car.position.y + 0.7, car.position.z - 2.3)
     );
 
-    const taillightMiddle = createSpotlight(
+    taillightMiddle = createSpotlight(
       { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.275),
       new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.3)
     );
 
-    const interior = createSpotlight(
+    interiorLight = createSpotlight(
       { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI, penumbra: 0.2, decay: 2 },
       new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z + 0.5),
       new THREE.Vector3(car.position.x, car.position.y + 0.715, car.position.z)
@@ -250,7 +254,7 @@ loader.load(
     let lightsOn = true;
     lightToggleBtn.addEventListener('click', () => {
       lightsOn = !lightsOn;
-      [lightLeft, lightRight, headlightLeft, headlightRight, interior, taillightLeft, taillightRight, taillightMiddle].forEach(light => {
+      [lightLeft, lightRight, headlightLeft, headlightRight, interiorLight, taillightLeft, taillightRight, taillightMiddle].forEach(light => {
         light.visible = lightsOn;
       });
       lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
@@ -589,6 +593,35 @@ function animate() {
 
   // === Car & Road Logic ===
   if (car) {
+    // === Update Light Positions with Car Movement ===
+  if (headlightLeft && headlightRight && taillightLeft && taillightRight && taillightMiddle && lightLeft && lightRight) {
+      const { x, y, z } = car.position;
+
+      lightLeft.position.set(x + 0.855, y + 0.545, z + 2.25);
+      lightLeft.target.position.set(x + 0.85, y + 0.625, z + 2.15);
+
+      lightRight.position.set(x - 0.855, y + 0.545, z + 2.25);
+      lightRight.target.position.set(x - 0.85, y + 0.625, z + 2.15);
+
+      headlightLeft.position.set(x + 0.75, y + 1, z + 1.55);
+      headlightLeft.target.position.set(x + 0.85, y + 0.25, z + 25);
+
+      headlightRight.position.set(x - 0.75, y + 1, z + 1.55);
+      headlightRight.target.position.set(x - 0.85, y + 0.25, z + 25);
+
+      taillightLeft.position.set(x + 0.85, y + 0.7, z - 2.275);
+      taillightLeft.target.position.set(x + 0.75, y + 0.7, z - 2.3);
+
+      taillightRight.position.set(x - 0.85, y + 0.7, z - 2.275);
+      taillightRight.target.position.set(x - 0.75, y + 0.7, z - 2.3);
+
+      taillightMiddle.position.set(x, y + 0.725, z - 2.275);
+      taillightMiddle.target.position.set(x, y + 0.725, z - 2.3);
+
+      interiorLight.position.set(x, y + 0.725, z + 0.5);
+      interiorLight.target.position.set(x, y + 0.715, z);
+    }
+
     car.position.z = 0;
 
     if (car) {
