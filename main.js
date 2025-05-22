@@ -198,52 +198,52 @@ loader.load(
     // === Headlight Indicators ===
     const lightLeft = createSpotlight(
       { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
-      new THREE.Vector3(0.855, 0.545, car.position.z + 2.25),
-      new THREE.Vector3(0.85, 0.625, car.position.z + 2.15)
+      new THREE.Vector3(car.position.x + 0.855, car.position.y + 0.545, car.position.z + 2.25),
+      new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.625, car.position.z + 2.15)
     );
 
     const lightRight = createSpotlight(
       { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
-      new THREE.Vector3(-0.855, 0.545, car.position.z + 2.25),
-      new THREE.Vector3(-0.85, 0.625, car.position.z + 2.15)
+      new THREE.Vector3(car.position.x - 0.855, car.position.y + 0.545, car.position.z + 2.25),
+      new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.625, car.position.z + 2.15)
     );
 
     // === Functional Headlights ===
     const headlightLeft = createSpotlight(
       { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
-      new THREE.Vector3(0.75, 1, car.position.z + 1.55),
-      new THREE.Vector3(0.85, 0.25, car.position.z + 25)
+      new THREE.Vector3(car.position.x + 0.75, car.position.y + 1, car.position.z + 1.55),
+      new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.25, car.position.z + 25)
     );
 
     const headlightRight = createSpotlight(
       { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
-      new THREE.Vector3(-0.75, 1, car.position.z + 1.55),
-      new THREE.Vector3(-0.85, 0.25, car.position.z + 25)
+      new THREE.Vector3(car.position.x - 0.75, car.position.y + 1, car.position.z + 1.55),
+      new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.25, car.position.z + 25)
     );
 
     // === Taillights ===
     const taillightLeft = createSpotlight(
       { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(0.85, 0.7, car.position.z - 2.275),
-      new THREE.Vector3(0.75, 0.7, car.position.z - 2.3)
+      new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.7, car.position.z - 2.275),
+      new THREE.Vector3(car.position.x + 0.75, car.position.y + 0.7, car.position.z - 2.3)
     );
 
     const taillightRight = createSpotlight(
       { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(-0.85, 0.7, car.position.z - 2.275),
-      new THREE.Vector3(-0.75, 0.7, car.position.z - 2.3)
+      new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.7, car.position.z - 2.275),
+      new THREE.Vector3(car.position.x - 0.75, car.position.y + 0.7, car.position.z - 2.3)
     );
 
     const taillightMiddle = createSpotlight(
       { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(0, 0.725, car.position.z - 2.275),
-      new THREE.Vector3(0, 0.725, car.position.z - 2.3)
+      new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.275),
+      new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.3)
     );
 
     const interior = createSpotlight(
-      { color: 0xffffff, intensity: 100, distance: 0.5, angle: Math.PI, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(car.position.x, 0.725, car.position.z + 0.5),
-      new THREE.Vector3(car.position.x, 0.715, car.position.z)
+      { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z + 0.5),
+      new THREE.Vector3(car.position.x, car.position.y + 0.715, car.position.z)
     );
     scene.add(car);
 
@@ -468,6 +468,8 @@ const minSpeed = 0.1;
 const keys = {
   w: false,
   s: false,
+  a: false,
+  d: false,
   shift: false,
 };
 
@@ -484,6 +486,8 @@ document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
   if (key === 'w') keys.w = true;
   if (key === 's') keys.s = true;
+  if (key === 'a') keys.a = true;
+  if (key === 'd') keys.d = true;
   if (e.key === 'Shift') keys.shift = true;
   if (key === 'q') {
     cruiseControl = !cruiseControl;
@@ -498,6 +502,8 @@ document.addEventListener('keyup', (e) => {
   const key = e.key.toLowerCase();
   if (key === 'w') keys.w = false;
   if (key === 's') keys.s = false;
+  if (key === 'a') keys.a = false;
+  if (key === 'd') keys.d = false;
   if (e.key === 'Shift') keys.shift = false;
 });
 
@@ -585,6 +591,18 @@ function animate() {
   if (car) {
     car.position.z = 0;
 
+    if (car) {
+      const lateralSpeed = 0.1;
+      const maxLateral = roadWidth / 2 - 1;
+
+      if (keys.d) {
+        car.position.x = Math.max(car.position.x - lateralSpeed, -maxLateral);
+      }
+      if (keys.a) {
+        car.position.x = Math.min(car.position.x + lateralSpeed, maxLateral);
+      }
+    }
+
     for (let segment of roadSegments) {
       segment.position.z -= speed;
     }
@@ -610,7 +628,7 @@ function animate() {
       }
     } else {
       if (car) {
-        camera.position.set(car.position.x, car.position.y + 2.5, car.position.z - 12.5);
+        camera.position.set(0, 2.5, -12.5);
         camera.lookAt(0, 1, 5);
       }
     }
