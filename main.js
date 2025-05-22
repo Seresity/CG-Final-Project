@@ -93,13 +93,16 @@ toggleCameraBtn.addEventListener('click', () => {
   }
 });
 
-// Sky color control
-const dayColor = new THREE.Color(0x87ceeb);
-const nightColor = new THREE.Color(0x000010);
-const rainColor = new THREE.Color(0x003366);
+// =============================
+// [SECTION]: SKY & WEATHER
+// =============================
+const dayColor = new THREE.Color(0x50b1f3);
+const nightColor = new THREE.Color(0x003050);
+const rainColor = new THREE.Color(0x9eb2bf);
 
 let isRaining = false;
 let changeColor = dayColor;
+let weatherState = "clear";
 
 function updateSkyColor() {
   const t = Math.max(0, sun.position.y / sunRadius);
@@ -107,75 +110,69 @@ function updateSkyColor() {
   scene.background = nightColor.clone().lerp(changeColor, t);
 }
 
-// === weather toggling ===
-let weatherState = "clear";
-
 const toggleWeatherButton = document.getElementById("weatherToggleBtn");
 toggleWeatherButton.addEventListener('click', () => {
   changeWeather(weatherState);
 });
 
-// === SOIL ===
-let soilTexture = null;
-const textureLoader = new THREE.TextureLoader();
-textureLoader.load('textures/TCOM_Sand_Muddy2_2x2_2K_albedo.png', texture => {
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 4);
-  soilTexture = texture;
-  itemLoaded();
-});
+let clouds = [];
 
-const gltfLoader = new GLTFLoader();
-gltfLoader.load('models/lowpoly_pine_tree/scene.gltf', gltf => { treeModel = gltf.scene; itemLoaded(); });
-gltfLoader.load('models/lowpoly_rocks/scene.gltf', gltf => { rockModel = gltf.scene; itemLoaded(); });
-gltfLoader.load('models/lowpoly_grass/scene.gltf', gltf => { grassModel = gltf.scene; itemLoaded(); });
+function addRain() {
+  textureLoader.load("../textures/smoke.png", function(texture){
+    const cloudGeo = new THREE.PlaneGeometry(500,500);
+    const cloudMaterial = new THREE.MeshLambertMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.2
+    });
 
-let treeModel, rockModel, grassModel = null;
-gltfLoader.load('models/lowpoly_pine_tree/scene.gltf', gltf => { treeModel = gltf.scene; });
-gltfLoader.load('models/lowpoly_rocks/scene.gltf', gltf => { rockModel = gltf.scene; });
-gltfLoader.load('models/lowpoly_grass/scene.gltf', gltf => { grassModel = gltf.scene; });
+    for (let p=0; p<100; p++) {
+      let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
+      cloud.position.set(
+        Math.random()*2400 -1200,
+        400,
+        Math.random()*2000 - 1000
+      );
+      cloud.rotation.x = 90;
+      cloud.rotation.y = 0;
+      cloud.rotation.z = 0;
+      cloud.material.opacity = 0.6;
+      clouds.push(cloud);
+      scene.add(cloud);
+    }
+  });
+  // const material = new THREE.ShaderMaterial({
+  //   vertexShader: document.getElementById('vertexShader').textContent,
+  //   fragmentShader: document.getElementById('fragmentShader').textContent,
+  //   uniforms: uniforms
+    
+  // })
+}
 
-function spawnGrassPatch(group, x, y, z, baseScale) {
-  if (!grassModel) return;
-  const patchSize = 5;
-  const numBlades = Math.floor(Math.random() * 5);
-  for (let i = 0; i < numBlades; i++) {
-    const offsetX = (Math.random() - 0.5) * patchSize;
-    const offsetZ = (Math.random() - 0.5) * patchSize;
-    const scale = baseScale * (1.5 + Math.random());
-    const blade = grassModel.clone();
-    blade.position.set(x + offsetX, y, z + offsetZ);
-    blade.scale.setScalar(scale);
-    blade.rotation.y = Math.random() * Math.PI * 2;
-    blade.traverse(child => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          dynamicEnvMeshes.push(child); // Track it
-        }
-      });
-    group.add(blade);
+function removeRain() {
+  while (clouds.length) {
+    const oldCloud = clouds.shift();
+    scene.remove(oldCloud);
   }
 }
 
-const dynamicEnvMeshes = [];
-function spawnEnvObject(model, x, y, z, scale = 3, rotationY = 0) {
-  if (!model) return null;
-  const obj = model.clone();
-  obj.position.set(x, y, z);
-  obj.scale.setScalar(scale);
-  obj.rotation.y = rotationY;
-  obj.traverse(child => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-      dynamicEnvMeshes.push(child);
-    }
-  });
-  return obj;
+// Weather changing via button
+function changeWeather(state) {
+  if (state == "clear") {
+    weatherState = "rainy";
+    isRaining = true;
+    addRain();
+  }
+  else if (state == "rainy") {
+    weatherState = "clear";
+    isRaining = false;
+    removeRain();
+  }
 }
 
-// === CAR MODEL & HEADLIGHTS ===
+// =============================
+// [SECTION]: CAR
+// =============================
 let car = null;
 const loader = new GLTFLoader();
 loader.load(
@@ -184,7 +181,7 @@ loader.load(
     car = gltf.scene;
     car.scale.set(100, 100, 100);
     car.position.y = 0.2;
-    // Apply shadows and look for headlight meshes
+
     car.traverse(n => {
       if (n.isMesh) {
         n.castShadow = true;
@@ -192,7 +189,7 @@ loader.load(
       }
     });
 
-    // === Utility: Add lights + targets ===
+    // === Add lights + targets ===
     function createSpotlight({ color, intensity, distance, angle, penumbra, decay }, position, targetPos) {
       const light = new THREE.SpotLight(color, intensity, distance, angle, penumbra, decay);
       light.position.copy(position);
@@ -267,7 +264,9 @@ loader.load(
   }
 );
 
-// === Road Decoration Setup ===
+// =============================
+// [SECTION]: Road + Tiles
+// =============================
 const roadSegmentLength = 60;
 const roadWidth = 10;
 const visibleSegments = 15;
@@ -312,7 +311,7 @@ function createRoadSegment(z) {
   group.add(road);
 
   // Side tiles with environment decorations
-  const sideTileWidth = roadWidth * 2;
+  const sideTileWidth = roadWidth * 4;
   for (let i = 1; i <= 2; i++) {
     const offset = roadWidth / 2 + sideTileWidth * i - sideTileWidth / 2;
     const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: soilTexture });
@@ -329,17 +328,15 @@ function createRoadSegment(z) {
       const numObjects = 2 + Math.floor(Math.random() * 3);
       for (let j = 0; j < numObjects; j++) {
         const randZ = (Math.random() - 0.5) * roadSegmentLength;
-        const offsetX = xOffset + (Math.random() - 0.5) * sideTileWidth * 0.9;
+        const offsetX = xOffset + (Math.random() - 0.5) * sideTileWidth;
         const randType = Math.random();
 
-        let treePosX;
-        if (Math.random() < 0.5) {
-          treePosX = 20 + Math.random() * 10;
-        } else {
-          treePosX = 0 - Math.random() * 5; 
-        }
-        
-        const treePosY = 3.5;
+        const sideEdge = roadWidth / 2 + sideTileWidth / 2;
+        const direction = xOffset > 0 ? 1 : -1;
+        const spawnEdge = direction * (sideEdge - sideTileWidth * 0.5) - 2;
+        const spawnRange = sideTileWidth;
+        const treePosX = spawnEdge + direction * Math.random() * spawnRange * 2;
+        const treePosY = 0.125;
         const treeScale = 0.03;
         const treePosZ = (Math.random() - 0.5) * 10;
 
@@ -368,23 +365,112 @@ function createRoadSegment(z) {
   roadSegments.push(group);
 }
 
-// === Speed Control ===
+// =============================
+// [SECTION]: ENVIRONMENT
+// =============================
+let soilTexture = null;
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load('textures/TCOM_Sand_Muddy2_2x2_2K_albedo.png', texture => {
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(4, 4);
+  soilTexture = texture;
+  itemLoaded();
+});
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.load('models/lowpoly_pine_tree/scene.gltf', gltf => { treeModel = gltf.scene; itemLoaded(); });
+gltfLoader.load('models/lowpoly_rocks/scene.gltf', gltf => { rockModel = gltf.scene; itemLoaded(); });
+gltfLoader.load('models/lowpoly_grass/scene.gltf', gltf => { grassModel = gltf.scene; itemLoaded(); });
+
+let treeModel, rockModel, grassModel = null;
+gltfLoader.load('models/lowpoly_pine_tree/scene.gltf', gltf => { treeModel = gltf.scene; });
+gltfLoader.load('models/lowpoly_rocks/scene.gltf', gltf => { rockModel = gltf.scene; });
+gltfLoader.load('models/lowpoly_grass/scene.gltf', gltf => { grassModel = gltf.scene; });
+
+function spawnGrassPatch(group, x, y, z, baseScale) {
+  if (!grassModel) return;
+  const patchSize = 20;
+  const numBlades = Math.floor(Math.random() * 5);
+  for (let i = 0; i < numBlades; i++) {
+    const offsetX = (Math.random() - 0.5) * patchSize;
+    const offsetZ = (Math.random() - 0.5) * patchSize;
+    const scale = baseScale * (1.5 + Math.random());
+    const blade = grassModel.clone();
+    blade.position.set(x + offsetX, y, z + offsetZ);
+    blade.scale.setScalar(scale);
+    blade.rotation.y = Math.random() * Math.PI * 2;
+    blade.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          dynamicEnvMeshes.push(child); // Track it
+        }
+      });
+    group.add(blade);
+  }
+}
+
+const dynamicEnvMeshes = [];
+function spawnEnvObject(model, x, y, z, scale = 2.5, rotationY = 0) {
+  if (!model) return null;
+
+  const obj = model.clone();
+  obj.scale.setScalar(scale);
+  obj.rotation.y = rotationY;
+
+  // Temporarily add to scene to compute bounding box
+  scene.add(obj);
+  obj.updateWorldMatrix(true, true);
+
+  // Compute world bounding box
+  const box = new THREE.Box3().setFromObject(obj);
+  const heightOffset = box.min.y;
+
+  // Remove from scene after computing box
+  scene.remove(obj);
+
+  // Set final position with grounded offset
+  obj.position.set(x, y - heightOffset, z);
+
+  // Traverse and add shadows + lighting reactions
+  obj.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      dynamicEnvMeshes.push(child);
+    }
+  });
+
+  return obj;
+}
+
+// =============================
+// [SECTION]: SPEED
+// =============================
 let speed = 2;
+let cruiseControl = false;
+let cruiseSpeed = speed;
 const maxSpeed = 5;
 const minSpeed = 0.1;
 
 const keys = {
   w: false,
-  s: false, 
-  shift: false
+  s: false,
+  shift: false,
 };
 
-// Key press handling
+// Key press events
 document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
   if (key === 'w') keys.w = true;
   if (key === 's') keys.s = true;
   if (e.key === 'Shift') keys.shift = true;
+  if (key === 'q' && !cruiseControl) {
+    cruiseControl = true;
+    cruiseSpeed = speed;
+  } else if (key === 'q' && cruiseControl) {
+    cruiseControl = false;
+  }
 });
 
 document.addEventListener('keyup', (e) => {
@@ -394,91 +480,33 @@ document.addEventListener('keyup', (e) => {
   if (e.key === 'Shift') keys.shift = false;
 });
 
-// Update speed based on input and resistance
+// Speed update logic based on input and resistance
 function updateSpeed() {
+  if (cruiseControl) {
+    speed = cruiseSpeed;
+    return;
+  }
+  
   const resistance = (speed / maxSpeed) ** 2;
 
   if (keys.w) {
     const boost = keys.shift ? 5 : 1.5;
-    speed += boost * 0.0015 * (1 - resistance); // Acceleration
+    speed += boost * 0.0015 * (1 - resistance);
   } else if (keys.s) {
-    speed -= 0.0025 + 0.006 * resistance; // Braking
+    speed -= 0.0025 + 0.006 * resistance;
   } else {
-    speed -= 0.00025 + 0.0025 * resistance; // Coasting drag
+    speed -= 0.00025 + 0.0025 * resistance;
   }
 
   speed = THREE.MathUtils.clamp(speed, minSpeed, maxSpeed);
 }
 
-let clouds = [];
-
-
-
-function addRain() {
-  textureLoader.load("../textures/smoke.png", function(texture){
-    const cloudGeo = new THREE.PlaneGeometry(500,500);
-    const cloudMaterial = new THREE.MeshLambertMaterial({
-      map: texture,
-      transparent: true,
-      alphaTest: 0.2
-    });
-
-    for (let p=0; p<100; p++) {
-      let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
-      cloud.position.set(
-        Math.random()*2400 -1200,
-        400,
-        Math.random()*2000 - 1000
-      );
-      cloud.rotation.x = 90;
-      cloud.rotation.y = 0;
-      cloud.rotation.z = 0;
-      cloud.material.opacity = 0.6;
-      clouds.push(cloud);
-      scene.add(cloud);
-    }
-  });
-  // const material = new THREE.ShaderMaterial({
-  //   vertexShader: document.getElementById('vertexShader').textContent,
-  //   fragmentShader: document.getElementById('fragmentShader').textContent,
-  //   uniforms: uniforms
-    
-  // })
-
-}
-
-function removeRain() {
-  while (clouds.length) {
-    const oldCloud = clouds.shift();
-    scene.remove(oldCloud);
-  }
-  
-}
-
-// Weather changing via button
-function changeWeather(state) {
-  if (state == "clear") {
-    weatherState = "rainy";
-    isRaining = true;
-    addRain();
-  }
-  else if (state == "rainy") {
-    weatherState = "clear";
-    isRaining = false;
-    removeRain();
-  }
-}
-
-// Dashboard UI
-const needle = document.getElementById('needle');
-const speedLabel = document.getElementById('speedLabel');
-
+// =============================
+// [SECTION]: ANIMATE
+// =============================
 function animate() {
   requestAnimationFrame(animate);
-
-  // === Update Sky and Light ===
   updateSkyColor();
-  
 
   sunAngle += 0.0005;
   const sunX = sunRadius * Math.cos(sunAngle);
@@ -521,7 +549,6 @@ function animate() {
   });
 
   // === cloud rotation logic ===
-
   if (isRaining && clouds.length > 0) {
     clouds.forEach(p => {
       //let zRot = p.rotation.z;
@@ -532,7 +559,6 @@ function animate() {
       //p.lookAt(camera.position);
     })
   }
-  
 
   // === Car & Road Logic ===
   if (car) {
