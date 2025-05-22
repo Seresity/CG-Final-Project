@@ -27,12 +27,6 @@ document.body.appendChild(renderer.domElement);
 // =============================
 // [SECTION]: LIGHT SETUP
 // =============================
-const hemiLight = new THREE.HemisphereLight(0xaaaaaa, 0x444444, 0.3);
-scene.add(hemiLight);
-
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-scene.add(ambientLight);
-
 const moon = new THREE.DirectionalLight(0x8899ff, 0.2);
 moon.castShadow = true;
 scene.add(moon);
@@ -231,28 +225,34 @@ loader.load(
 
     // === Taillights ===
     const taillightLeft = createSpotlight(
-      { color: 0xff0000, intensity: 5, distance: 0.1, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(0.85, 0.7, car.position.z - 2.25),
+      { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(0.85, 0.7, car.position.z - 2.275),
       new THREE.Vector3(0.75, 0.7, car.position.z - 2.3)
     );
 
     const taillightRight = createSpotlight(
-      { color: 0xff0000, intensity: 5, distance: 0.1, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(-0.85, 0.7, car.position.z - 2.25),
+      { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(-0.85, 0.7, car.position.z - 2.275),
       new THREE.Vector3(-0.75, 0.7, car.position.z - 2.3)
     );
 
     const taillightMiddle = createSpotlight(
-      { color: 0xff0000, intensity: 5, distance: 0.1, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(0, 0.725, car.position.z - 2.25),
+      { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(0, 0.725, car.position.z - 2.275),
       new THREE.Vector3(0, 0.725, car.position.z - 2.3)
+    );
+
+    const interior = createSpotlight(
+      { color: 0xffffff, intensity: 100, distance: 0.5, angle: Math.PI, penumbra: 0.2, decay: 2 },
+      new THREE.Vector3(car.position.x, 0.725, car.position.z + 0.5),
+      new THREE.Vector3(car.position.x, 0.715, car.position.z)
     );
     scene.add(car);
 
     let lightsOn = true;
     lightToggleBtn.addEventListener('click', () => {
       lightsOn = !lightsOn;
-      [lightLeft, lightRight, headlightLeft, headlightRight].forEach(light => {
+      [lightLeft, lightRight, headlightLeft, headlightRight, interior, taillightLeft, taillightRight, taillightMiddle].forEach(light => {
         light.visible = lightsOn;
       });
       lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
@@ -368,6 +368,14 @@ function createRoadSegment(z) {
 // =============================
 // [SECTION]: ENVIRONMENT
 // =============================
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(1000, 1000),
+  new THREE.MeshStandardMaterial({ color: 0x222222 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
 let soilTexture = null;
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('textures/TCOM_Sand_Muddy2_2x2_2K_albedo.png', texture => {
