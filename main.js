@@ -10,13 +10,11 @@ import { GLTFLoader } from './build/GLTFLoader.js';
 // =============================
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
-  75,
+  25,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
-camera.position.set(0, 5, -10);
-camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -27,11 +25,11 @@ document.body.appendChild(renderer.domElement);
 // =============================
 // [SECTION]: LIGHT SETUP
 // =============================
-const moon = new THREE.DirectionalLight(0x8899ff, 0.2);
+const moon = new THREE.DirectionalLight(0x8899ff, 0.1);
 moon.castShadow = true;
 scene.add(moon);
 
-const sun = new THREE.DirectionalLight(0xffffff, 10);
+const sun = new THREE.DirectionalLight(0xffffff, 5);
 sun.position.set(100, 100, 0);
 sun.castShadow = true;
 sun.shadow.bias = -0.001;
@@ -212,15 +210,15 @@ loader.load(
 
     // === Functional Headlights ===
     const headlightLeft = createSpotlight(
-      { color: 0xffffff, intensity: 2, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+      { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
       new THREE.Vector3(0.75, 1, car.position.z + 1.55),
-      new THREE.Vector3(0.85, 0.1, car.position.z + 25)
+      new THREE.Vector3(0.85, 0.25, car.position.z + 25)
     );
 
     const headlightRight = createSpotlight(
-      { color: 0xffffff, intensity: 2, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+      { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
       new THREE.Vector3(-0.75, 1, car.position.z + 1.55),
-      new THREE.Vector3(-0.85, 0.1, car.position.z + 25)
+      new THREE.Vector3(-0.85, 0.25, car.position.z + 25)
     );
 
     // === Taillights ===
@@ -331,11 +329,17 @@ function createRoadSegment(z) {
         const offsetX = xOffset + (Math.random() - 0.5) * sideTileWidth;
         const randType = Math.random();
 
-        const sideEdge = roadWidth / 2 + sideTileWidth / 2;
-        const direction = xOffset > 0 ? 1 : -1;
-        const spawnEdge = direction * (sideEdge - sideTileWidth * 0.5) - 2;
-        const spawnRange = sideTileWidth;
-        const treePosX = spawnEdge + direction * Math.random() * spawnRange * 2;
+        const treeBuffer = 20; // half of the 40-unit road width
+        const maxOffset = sideTileWidth / 2;
+        let treePosX;
+
+        // Generate X position relative to the side tile center (xOffset),
+        // but clamp it to avoid the center road area
+        do {
+          const localOffset = (Math.random() - 0.5) * sideTileWidth;
+          treePosX = xOffset + localOffset;
+        } while (Math.abs(treePosX) < treeBuffer);
+
         const treePosY = 0.125;
         const treeScale = 0.03;
         const treePosZ = (Math.random() - 0.5) * 10;
@@ -467,15 +471,24 @@ const keys = {
   shift: false,
 };
 
+function updateCruiseUI(enabled) {
+  const cruiseIcon = document.getElementById('cruiseIcon');
+  const needle = document.getElementById('needle');
+  if (cruiseIcon) cruiseIcon.style.display = enabled ? 'block' : 'none';
+  if (needle) needle.classList.toggle('cruise', enabled);
+}
+updateCruiseUI(false);
+
 // Key press events
 document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
   if (key === 'w') keys.w = true;
   if (key === 's') keys.s = true;
   if (e.key === 'Shift') keys.shift = true;
-  if (key === 'q' && !cruiseControl) {
-    cruiseControl = true;
-    cruiseSpeed = speed;
+  if (key === 'q') {
+    cruiseControl = !cruiseControl;
+    if (cruiseControl) cruiseSpeed = speed;
+    updateCruiseUI(cruiseControl);
   } else if (key === 'q' && cruiseControl) {
     cruiseControl = false;
   }
@@ -593,12 +606,12 @@ function animate() {
     } else if (cameraMode === 'firstPerson') {
       if (car) {
         camera.position.set(car.position.x, car.position.y + 1.5, car.position.z + 1.5);
-        camera.lookAt(car.position.x, car.position.y + 1.5, car.position.z + 10);
+        camera.lookAt(car.position.x, car.position.y + 1, car.position.z + 10);
       }
     } else {
       if (car) {
-        camera.position.set(car.position.x, car.position.y + 2.5, car.position.z - 7.5);
-        camera.lookAt(car.position);
+        camera.position.set(car.position.x, car.position.y + 2.5, car.position.z - 12.5);
+        camera.lookAt(0, 1, 5);
       }
     }
   }

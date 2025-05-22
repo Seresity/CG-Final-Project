@@ -122,6 +122,11 @@
       border-radius: 8px;
       pointer-events: none;
     }
+
+    #needle.cruise {
+      background-color: white !important;
+      box-shadow: 0 0 8px white;
+    }
   </style>
 </head>
 <body>
@@ -146,6 +151,7 @@
       <div class="speed-container">
         <div id="needle"></div>
         <div id="speedLabel">0 km/h</div>
+        <div id="cruiseIcon" style="display: none;">🧭</div>
       </div>
       <div class="button-group">
         <button id="toggleCameraBtn">Enter Free Camera</button>
@@ -160,8 +166,10 @@
 
     <div id="keyHints">
       <b>Controls:</b><br>
-      W / S - Accelerate / Brake<br>
+      W - Accelerate
+      S - Brake<br>
       Shift + W - Boost<br>
+      Q - Cruise Control
       Mouse - Look<br>
       Click & Hold to Rotate
     </div>
