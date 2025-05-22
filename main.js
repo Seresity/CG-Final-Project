@@ -24,13 +24,6 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.enablePan = true;
-controls.enableZoom = true;
-controls.enabled = false;
-
 // =============================
 // [SECTION]: LIGHT SETUP
 // =============================
@@ -72,16 +65,31 @@ function itemLoaded() {
 }
 
 // =============================
-// [SECTION]: UI Event Handlers 
+// [SECTION]: CAMERA
 // =============================
-let isFreeCamera = false;
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enablePan = true;
+controls.enableZoom = true;
+controls.enabled = false;
+
+let cameraMode = 'thirdPerson';
 const toggleCameraBtn = document.getElementById('toggleCameraBtn');
 toggleCameraBtn.addEventListener('click', () => {
-  isFreeCamera = !isFreeCamera;
-  controls.enabled = isFreeCamera;
-  toggleCameraBtn.textContent = isFreeCamera ? 'Exit Free Camera' : 'Enter Free Camera';
-  if (isFreeCamera && car) {
-    controls.target.copy(car.position);
+  if (cameraMode === 'thirdPerson') {
+    cameraMode = 'freeCamera';
+    controls.enabled = true;
+    toggleCameraBtn.textContent = 'Enter First Person';
+    if (car) controls.target.copy(car.position);
+  } else if (cameraMode === 'freeCamera') {
+    cameraMode = 'firstPerson';
+    controls.enabled = false;
+    toggleCameraBtn.textContent = 'Enter Third Person';
+  } else {
+    cameraMode = 'thirdPerson';
+    controls.enabled = false;
+    toggleCameraBtn.textContent = 'Enter Free Camera';
   }
 });
 
@@ -545,12 +553,19 @@ function animate() {
       createRoadSegment(newZ);
     }
 
-    if (isFreeCamera) {
-      controls.target.copy(car.position);
+    if (cameraMode === 'freeCamera') {
+      if (car) controls.target.copy(car.position);
       controls.update();
+    } else if (cameraMode === 'firstPerson') {
+      if (car) {
+        camera.position.set(car.position.x, car.position.y + 1.5, car.position.z + 1.5);
+        camera.lookAt(car.position.x, car.position.y + 1.5, car.position.z + 10);
+      }
     } else {
-      camera.position.set(car.position.x, car.position.y + 2.5, car.position.z - 7.5);
-      camera.lookAt(car.position);
+      if (car) {
+        camera.position.set(car.position.x, car.position.y + 2.5, car.position.z - 7.5);
+        camera.lookAt(car.position);
+      }
     }
   }
 
