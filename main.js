@@ -21,6 +21,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+const textureLoader = new THREE.TextureLoader();
 
 // =============================
 // [SECTION]: LIGHT SETUP
@@ -108,8 +109,34 @@ toggleWeatherButton.addEventListener('click', () => {
 });
 
 let clouds = [];
+let RainMaterial, rainUniforms;
+
+const rainGeometry = new THREE.PlaneGeometry(2,2);
+const rainTexture = textureLoader.load('../textures/rainNoise.png', () => {
+  rainTexture.wrapS = rainTexture.wrapT = THREE.RepeatWrapping;
+  rainTexture.minFilter = THREE.LinearFilter;
+  rainTexture.magFilter = THREE.LinearFilter;
+});
+
+rainUniforms = {
+  iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+  iTime: { value: 0.0 },
+  iChannel0: { value: rainTexture }
+};
+
+RainMaterial = new THREE.ShaderMaterial({
+  vertexShader: document.getElementById('vertexShaderRain').textContent,
+  fragmentShader: document.getElementById('fragmentShaderRain').textContent,
+  uniforms: rainUniforms
+});
+
+const rainQuad = new THREE.Mesh(rainGeometry, RainMaterial);
 
 function addRain() {
+  scene.add(rainQuad);
+}
+
+function addClouds() {
   textureLoader.load("../textures/smoke.png", function(texture){
     const cloudGeo = new THREE.PlaneGeometry(500,500);
     const cloudMaterial = new THREE.MeshLambertMaterial({
@@ -133,12 +160,7 @@ function addRain() {
       scene.add(cloud);
     }
   });
-  // const material = new THREE.ShaderMaterial({
-  //   vertexShader: document.getElementById('vertexShader').textContent,
-  //   fragmentShader: document.getElementById('fragmentShader').textContent,
-  //   uniforms: uniforms
-    
-  // })
+  addRain();
 }
 
 function removeRain() {
@@ -153,7 +175,7 @@ function changeWeather(state) {
   if (state == "clear") {
     weatherState = "rainy";
     isRaining = true;
-    addRain();
+    addClouds();
   }
   else if (state == "rainy") {
     weatherState = "clear";
@@ -385,7 +407,6 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 let soilTexture = null;
-const textureLoader = new THREE.TextureLoader();
 textureLoader.load('textures/TCOM_Sand_Muddy2_2x2_2K_albedo.png', texture => {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(4, 4);
@@ -535,7 +556,7 @@ function updateSpeed() {
 // =============================
 // [SECTION]: ANIMATE
 // =============================
-function animate() {
+function animate(time) {
   requestAnimationFrame(animate);
   updateSkyColor();
 
@@ -589,6 +610,9 @@ function animate() {
       //zRot -= 0.002;
       //p.lookAt(camera.position);
     })
+  }
+  if (isRaining) {
+    RainMaterial.uniforms.iTime.value = time * 0.001;
   }
 
   // === Car & Road Logic ===
@@ -677,4 +701,5 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  rainUniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
 });
