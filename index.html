@@ -174,30 +174,43 @@
       Click & Hold to Rotate
     </div>
   </div>
-  <!-- <script id="vertexShader" type="x-shader/x-fragment">
-    varying vec2 fragCoord;
-
+  <!--Vertex Shader for the rain-->
+  <script id="vertexShaderRain" type="x-shader/x-vertex">
+    varying vec2 vUv;
     void main() {
-      vec2 q = fragCoord.xy/iResolution.xy;
-      vec2 p = -1.0+2.0*q;
-	    p.x *= iResolution.x/iResolution.y;
-
-      vec3 col = vec3(0.0, 0.0, 0.0);
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
   </script>
 
-  <script id="fragmentShader" type="x-shader/x-fragment">
-    varying vec4 fragColor;
+  <!--Fragment Shader for the rain-->
+  <script id="fragmentShaderRain" type="x-shader/x-fragment">
+    
+    precision mediump float;
+    
+    uniform vec2 iResolution;
+    uniform float iTime;
+    uniform sampler2D iChannel0;
+
+    varying vec2 vUv;
 
     void main() {
-      vec2 st =  p * vec2(.5, .01)+vec2(iTime*.3-q.y*.6*-0.0, iTime*.3);
-      float f = floor(mod(iTime/9., 2.0));
-	    f = texture(iChannel0, st).y * texture(iChannel0, st*.773).x * 1.55;
-	    f = clamp(pow(abs(f), 23.0) * 13.0, 0.0, q.y*.14);
-	    col += f;
-      fragColor=vec4(col, 1.0 );
+      vec2 q = vUv;
+      vec2 p = -1.0 + 2.0 * q;
+      p.x *= iResolution.x / iResolution.y;
+
+      vec3 col = vec3(0.0,0.0,0.0);
+
+      //Rain
+      vec2 st = p * vec2(0.5,0.01) + vec2(iTime * 0.3 - q.y * 0.6 * -0.0, iTime * 0.3);
+      float f = floor(mod(iTime / 9.0, 2.0));
+      f = texture2D(iChannel0, st).y * texture2D(iChannel0, st * 0.773).x * 1.55;
+      f = clamp(pow(abs(f), 23.0) * 13.0, 0.0, q.y * 0.14);
+      col += f;
+
+      gl_FragColor = vec4(col, 1.0);
     }
-  </script> -->
+  </script>
 
   <script type="module" src="main.js"></script>
 </body>
