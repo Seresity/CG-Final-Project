@@ -177,6 +177,7 @@
   <!--Vertex Shader for the rain-->
   <script id="vertexShaderRain" type="x-shader/x-vertex">
     varying vec2 vUv;
+
     void main() {
       vUv = uv;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -185,30 +186,71 @@
 
   <!--Fragment Shader for the rain-->
   <script id="fragmentShaderRain" type="x-shader/x-fragment">
-    
-    precision mediump float;
-    
     uniform vec2 iResolution;
     uniform float iTime;
-    uniform sampler2D iChannel0;
-
     varying vec2 vUv;
 
+    float rand(vec2 a) {
+      return fract(sin(dot(mod(a, vec2(1000.0)).xy, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    float ease(float t) {
+      return t * t * (3.0 - 2.0 * t);
+    }
+
+    float rainDist(vec2 p, float scale, float intensity, float uTime) {
+      p *= 0.1;
+      p.x += p.y * 0.1;
+      p.y -= uTime * 500.0 / scale;
+      p.y *= 0.03;
+      float ix = floor(p.x);
+      p.y += mod(ix, 2.0) * 0.5 + (rand(vec2(ix)) -0.5) * 0.3;
+      float iy = floor(p.y);
+      vec2 index = vec2(ix, iy);
+      p -= index;
+      p.x += (rand(index.yx) * 2.0 - 1.0) * 0.35;
+      vec2 a = abs(p - 0.5);
+      float res = max(a.x * 0.8, a.y * 0.5) - 0.1;
+      bool empty = rand(index) < mix(1.0, 0.1, intensity);
+      return empty ? 1.0 : res;
+    }
+
     void main() {
-      vec2 q = vUv;
-      vec2 p = -1.0 + 2.0 * q;
-      p.x *= iResolution.x / iResolution.y;
+      vec2 uv = vUv;
+      vec2 fragCoord = uv * iResolution.xy;
+      vec2 wpos = fragCoord;
+      float intensity = 0.2;
+      float uTime = -iTime;
 
-      vec3 col = vec3(0.0,0.0,0.0);
+      vec3 add = vec3(0);
+      float rainSum = 0.0;
 
-      //Rain
-      vec2 st = p * vec2(0.5,0.01) + vec2(iTime * 0.3 - q.y * 0.6 * -0.0, iTime * 0.3);
-      float f = floor(mod(iTime / 9.0, 2.0));
-      f = texture2D(iChannel0, st).y * texture2D(iChannel0, st * 0.773).x * 1.55;
-      f = clamp(pow(abs(f), 23.0) * 13.0, 0.0, q.y * 0.14);
-      col += f;
+      const int numLayers = 4;
+      float scales[4];
+      scales[0] = 1.0;
+      scales[1] = 1.8;
+      scales[2] = 2.6;
+      scales[3] = 4.8;
 
-      gl_FragColor = vec4(col, 1.0);
+      for (int i = 0; i < numLayers; i++) {
+        float scale = scales[i];
+        float r = rainDist(wpos * scale + 500.0 * float(i), scale, intensity, uTime);
+        if (r < 0.0) {
+          float v = (1.0 - exp(r * 5.0)) / scale * 2.0;
+          wpos.x += v * 10.0;
+          wpos.y -= v * 2.0;
+          add += vec3(0.1, 0.15, 0.2) * v;
+          rainSum += (1.0 - rainSum) * 0.75;
+        }
+      }
+
+      vec3 rainColor = vec3(0.4, 0.5, 0.8);
+      vec3 color = vec3(0.0);
+
+      color += add;
+      color = mix(color, rainColor, 0.2 * rainSum);
+
+      gl_FragColor = vec4(color, rainSum);
     }
   </script>
 
