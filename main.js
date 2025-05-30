@@ -98,15 +98,22 @@ let isCloudy = false;
 let isRaining = false;
 let changeColor = dayColor;
 let weatherState = "clear";
-
+let currentColor;
 function updateSkyColor() {
   const t = Math.max(0, sun.position.y / sunRadius);
   changeColor = isCloudy ? cloudColor : dayColor;
   if (isCloudy) {
     changeColor = isRaining ? rainColor : cloudColor;
   }
+  currentColor = nightColor.clone().lerp(changeColor, t);
+  scene.background = currentColor;
+  if (!isRaining) {
+    scene.fog = new THREE.Fog(currentColor, 1, 650 + 350*t);
+  }
+  else {
+    scene.fog = new THREE.Fog(currentColor, 1, 450 + 250*t);
+  }
   
-  scene.background = nightColor.clone().lerp(changeColor, t);
 }
 
 const toggleWeatherButton = document.getElementById("weatherToggleBtn");
@@ -155,6 +162,8 @@ function addClouds() {
         400,
         Math.random()*2000 - 1000
       );
+      
+      
       cloud.rotation.x = 90;
       cloud.rotation.y = 0;
       cloud.rotation.z = 0;
@@ -627,6 +636,9 @@ function animate(time) {
       p.rotation.z -= 0.002;
       //zRot -= 0.002;
       //p.lookAt(camera.position);
+      if (isRaining) {
+        p.position.y = 300;
+      }
     })
   }
 
