@@ -91,16 +91,29 @@ toggleCameraBtn.addEventListener('click', () => {
 // =============================
 const dayColor = new THREE.Color(0x50b1f3);
 const nightColor = new THREE.Color(0x003050);
-const rainColor = new THREE.Color(0x9eb2bf);
+const cloudColor = new THREE.Color(0xA4B8BD);
+const rainColor = new THREE.Color(0x7e8cb4)
 
+let isCloudy = false;
 let isRaining = false;
 let changeColor = dayColor;
 let weatherState = "clear";
-
+let currentColor;
 function updateSkyColor() {
   const t = Math.max(0, sun.position.y / sunRadius);
-  changeColor = isRaining ? rainColor : dayColor;
-  scene.background = nightColor.clone().lerp(changeColor, t);
+  changeColor = isCloudy ? cloudColor : dayColor;
+  if (isCloudy) {
+    changeColor = isRaining ? rainColor : cloudColor;
+  }
+  currentColor = nightColor.clone().lerp(changeColor, t);
+  scene.background = currentColor;
+  if (!isRaining) {
+    scene.fog = new THREE.Fog(currentColor, 1, 650 + 350*t);
+  }
+  else {
+    scene.fog = new THREE.Fog(currentColor, 1, 450 + 250*t);
+  }
+  
 }
 
 const toggleWeatherButton = document.getElementById("weatherToggleBtn");
@@ -109,32 +122,29 @@ toggleWeatherButton.addEventListener('click', () => {
 });
 
 let clouds = [];
-let RainMaterial, rainUniforms;
-
-const rainGeometry = new THREE.PlaneGeometry(2,2);
-const rainTexture = textureLoader.load('../textures/rainNoise.png', () => {
-  rainTexture.wrapS = rainTexture.wrapT = THREE.RepeatWrapping;
-  rainTexture.minFilter = THREE.LinearFilter;
-  rainTexture.magFilter = THREE.LinearFilter;
-});
-
-rainUniforms = {
-  iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-  iTime: { value: 0.0 },
-  iChannel0: { value: rainTexture }
-};
-
-RainMaterial = new THREE.ShaderMaterial({
-  vertexShader: document.getElementById('vertexShaderRain').textContent,
-  fragmentShader: document.getElementById('fragmentShaderRain').textContent,
-  uniforms: rainUniforms
-});
-
-const rainQuad = new THREE.Mesh(rainGeometry, RainMaterial);
+let rainQuad;
 
 function addRain() {
-  scene.add(rainQuad);
+  const uniforms = {
+    iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    iTime: { value: 0 }
+  };
+
+  const material = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: document.getElementById('vertexShaderRain').textContent,
+    fragmentShader: document.getElementById('fragmentShaderRain').textContent,
+    transparent: true
+  });
+
+  rainQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  camera.add(rainQuad);
+  rainQuad.position.set(0,0,-0.5);
+  scene.add(camera);
+  return material, uniforms;
 }
+
+let rainM, rainU;
 
 function addClouds() {
   textureLoader.load("../textures/smoke.png", function(texture){
@@ -152,6 +162,8 @@ function addClouds() {
         400,
         Math.random()*2000 - 1000
       );
+      
+      
       cloud.rotation.x = 90;
       cloud.rotation.y = 0;
       cloud.rotation.z = 0;
@@ -160,27 +172,39 @@ function addClouds() {
       scene.add(cloud);
     }
   });
-  addRain();
+  
 }
 
-function removeRain() {
+function removeClouds() {
   while (clouds.length) {
     const oldCloud = clouds.shift();
     scene.remove(oldCloud);
   }
+  
+}
+
+function removeRain() {
+  camera.remove(rainQuad);
 }
 
 // Weather changing via button
 function changeWeather(state) {
   if (state == "clear") {
+    weatherState = "cloudy";
+    isCloudy = true;
+    addClouds();
+  }
+  else if (state == "cloudy") {
     weatherState = "rainy";
     isRaining = true;
-    addClouds();
+    rainM, rainU = addRain();
   }
   else if (state == "rainy") {
     weatherState = "clear";
+    isCloudy = false;
     isRaining = false;
     removeRain();
+    removeClouds();
   }
 }
 
@@ -556,6 +580,9 @@ function updateSpeed() {
 // =============================
 // [SECTION]: ANIMATE
 // =============================
+
+const clock = new THREE.Clock();
+
 function animate(time) {
   requestAnimationFrame(animate);
   updateSkyColor();
@@ -601,7 +628,7 @@ function animate(time) {
   });
 
   // === cloud rotation logic ===
-  if (isRaining && clouds.length > 0) {
+  if (isCloudy && clouds.length > 0) {
     clouds.forEach(p => {
       //let zRot = p.rotation.z;
       p.rotation.x = camera.rotation.x;
@@ -609,11 +636,19 @@ function animate(time) {
       p.rotation.z -= 0.002;
       //zRot -= 0.002;
       //p.lookAt(camera.position);
+      if (isRaining) {
+        p.position.y = 300;
+      }
     })
   }
+
+  // === rain dropping logic ===
   if (isRaining) {
-    RainMaterial.uniforms.iTime.value = time * 0.001;
+    rainU.iTime.value = clock.getElapsedTime();
+    
+    rainQuad.lookAt(camera.position);
   }
+  
 
   // === Car & Road Logic ===
   if (car) {
@@ -701,5 +736,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  rainUniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+  if (rainM != null) {
+    rainM.uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+  }
 });
