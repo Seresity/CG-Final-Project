@@ -15,7 +15,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-
+let snowParticleSystem = null;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -96,6 +96,7 @@ const rainColor = new THREE.Color(0x7e8cb4)
 
 let isCloudy = false;
 let isRaining = false;
+let isSnowing = false;
 let changeColor = dayColor;
 let weatherState = "clear";
 let currentColor;
@@ -187,6 +188,13 @@ function removeRain() {
   camera.remove(rainQuad);
 }
 
+function removeSnow() {
+  if (snowParticleSystem) {
+    scene.remove(snowParticleSystem.points);
+    snowParticleSystem = null;
+  }
+}
+
 // Weather changing via button
 function changeWeather(state) {
   if (state == "clear") {
@@ -195,7 +203,14 @@ function changeWeather(state) {
     addClouds();
   }
   else if (state == "cloudy") {
+    weatherState = "snowy";
+    isSnowing = true;
+    snowParticleSystem = new SnowParticleSystem(scene);
+  }
+  else if (state == "snowy") {
     weatherState = "rainy";
+    isSnowing = false;
+    removeSnow();
     isRaining = true;
     rainM, rainU = addRain();
   }
@@ -205,6 +220,51 @@ function changeWeather(state) {
     isRaining = false;
     removeRain();
     removeClouds();
+  }
+}
+
+class SnowParticleSystem {
+  constructor(scene) {
+    this.count = 1500;
+    const positions = new Float32Array(this.count * 3);
+    this.velocities = new Float32Array(this.count);
+
+    for (let i = 0; i < this.count; i++) {
+      positions[i * 3] = Math.random() * 200 - 100;
+      positions[i * 3 + 1] = Math.random() * 100 + 50;
+      positions[i * 3 + 2] = Math.random() * 200 - 100;
+
+      this.velocities[i] = 0.5 + Math.random() * 1.5;
+    }
+
+    this.geometry = new THREE.BufferGeometry();
+    this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    this.material = new THREE.PointsMaterial({
+      color: 0xFFFFFF,
+      size: 0.5,
+      transparent: true,
+      depthWrite: false,
+    });
+
+    this.points = new THREE.Points(this.geometry, this.material);
+    scene.add(this.points);
+  }
+
+  update(delta) {
+    const positions = this.geometry.attributes.position.array;
+
+    for (let i = 0; i < this.count; i++) {
+      positions[i * 3 + 1] -= this.velocities[i] * delta * 60;
+
+      if (positions[i * 3 + 1] < 0) {
+        positions[i * 3] = Math.random() * 200 - 100;
+        positions[i * 3 + 1] = 100;
+        positions[i * 3 + 2] = Math.random() * 200 - 100;
+      }
+    }
+
+    this.geometry.attributes.position.needsUpdate = true;
   }
 }
 
@@ -645,10 +705,12 @@ function animate(time) {
   // === rain dropping logic ===
   if (isRaining) {
     rainU.iTime.value = clock.getElapsedTime();
-    
     rainQuad.lookAt(camera.position);
   }
-  
+
+  if (isSnowing && snowParticleSystem) {
+    snowParticleSystem.update(clock.getDelta());
+  }
 
   // === Car & Road Logic ===
   if (car) {
