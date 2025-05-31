@@ -277,100 +277,206 @@ let lightLeft, lightRight;
 let interiorLight;
 let car = null;
 const loader = new GLTFLoader();
-loader.load(
-  '../cars/Dodge SRT Tomahawk/source/dodge_srt_tomahawk_x.glb',
-  function (gltf) {
-    car = gltf.scene;
-    car.scale.set(100, 100, 100);
-    car.position.y = 0.2;
+function loadCar(carURL) {
+  loader.load(
+    carURL,
+    function (gltf) {
+      car = gltf.scene;
+      car.scale.set(100, 100, 100);
+      car.position.y = 0.2;
 
-    car.traverse(n => {
-      if (n.isMesh) {
-        n.castShadow = true;
-        n.receiveShadow = true;
+      car.traverse(n => {
+        if (n.isMesh) {
+          n.castShadow = true;
+          n.receiveShadow = true;
+        }
+      });
+
+      if (carURL == '../cars/Dodge SRT Tomahawk/source/dodge_srt_tomahawk_x.glb') {
+        car.name = 'Dodge';
+      }
+      else {
+        car.name = 'Apollo';
+      }
+
+      // === Add lights + targets ===
+      function createSpotlight({ color, intensity, distance, angle, penumbra, decay }, position, targetPos) {
+        const light = new THREE.SpotLight(color, intensity, distance, angle, penumbra, decay);
+        light.position.copy(position);
+        light.castShadow = true;
+
+        const target = new THREE.Object3D();
+        target.position.copy(targetPos);
+        light.target = target;
+
+        scene.add(light, target);
+        return light;
+      }
+
+      // === Headlight Indicators ===
+      lightLeft = createSpotlight(
+        { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
+        new THREE.Vector3(car.position.x + 0.855, car.position.y + 0.545, car.position.z + 2.25),
+        new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.625, car.position.z + 2.15)
+      );
+
+      lightRight = createSpotlight(
+        { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
+        new THREE.Vector3(car.position.x - 0.855, car.position.y + 0.545, car.position.z + 2.25),
+        new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.625, car.position.z + 2.15)
+      );
+
+      // === Functional Headlights ===
+      headlightLeft = createSpotlight(
+        { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+        new THREE.Vector3(car.position.x + 0.75, car.position.y + 1, car.position.z + 1.55),
+        new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.25, car.position.z + 25)
+      );
+
+      headlightRight = createSpotlight(
+        { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
+        new THREE.Vector3(car.position.x - 0.75, car.position.y + 1, car.position.z + 1.55),
+        new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.25, car.position.z + 25)
+      );
+
+      // === Taillights ===
+      if (car.name == 'Dodge') {
+        taillightLeft = createSpotlight(
+          { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+          new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.7, car.position.z - 2.275),
+          new THREE.Vector3(car.position.x + 0.75, car.position.y + 0.7, car.position.z - 2.3)
+        );
+
+        taillightRight = createSpotlight(
+          { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+          new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.7, car.position.z - 2.275),
+          new THREE.Vector3(car.position.x - 0.75, car.position.y + 0.7, car.position.z - 2.3)
+        );
+      }
+      else {
+        taillightLeft = createSpotlight(
+          { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+          new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.6, car.position.z - 2.275),
+          new THREE.Vector3(car.position.x + 0.75, car.position.y + 0.6, car.position.z - 2.3)
+        );
+
+        taillightRight = createSpotlight(
+          { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+          new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.6, car.position.z - 2.275),
+          new THREE.Vector3(car.position.x - 0.75, car.position.y + 0.6, car.position.z - 2.3)
+        );
+      }
+      
+      if (car.name == 'Dodge') {
+        taillightMiddle = createSpotlight(
+          { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
+          new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.275),
+          new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.3)
+        );
+      }
+      
+
+      interiorLight = createSpotlight(
+        { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI, penumbra: 0.2, decay: 2 },
+        new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z + 0.5),
+        new THREE.Vector3(car.position.x, car.position.y + 0.715, car.position.z)
+      );
+      
+      scene.add(car);
+
+      let lightsOn = true;
+      lightToggleBtn.addEventListener('click', () => {
+        lightsOn = !lightsOn;
+        [lightLeft, lightRight, headlightLeft, headlightRight, interiorLight, taillightLeft, taillightRight, taillightMiddle].forEach(light => {
+          light.visible = lightsOn;
+        });
+        lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
+      });
+    },
+    undefined,
+    function (error) {
+      console.error('An error occurred while loading the car model:', error);
+    }
+  );
+  return car;
+}
+
+let Dodge, Apollo;
+
+function loadFirstCar() {
+  Dodge = loadCar('../cars/Dodge SRT Tomahawk/source/dodge_srt_tomahawk_x.glb');
+}
+loadFirstCar();
+
+function changeCar() {
+  if (car.name == 'Dodge') {
+    scene.remove(car);
+    disposeHierarchy(car);
+    [
+      lightLeft, lightRight, headlightLeft, headlightRight, 
+      taillightLeft, taillightRight, taillightMiddle, interiorLight
+    ].forEach(light => {
+      if (light) {
+        scene.remove(light);
+        light.dispose?.();
+        if (light.target) { scene.remove(light.target); }
       }
     });
-
-    // === Add lights + targets ===
-    function createSpotlight({ color, intensity, distance, angle, penumbra, decay }, position, targetPos) {
-      const light = new THREE.SpotLight(color, intensity, distance, angle, penumbra, decay);
-      light.position.copy(position);
-      light.castShadow = true;
-
-      const target = new THREE.Object3D();
-      target.position.copy(targetPos);
-      light.target = target;
-
-      scene.add(light, target);
-      return light;
-    }
-
-    // === Headlight Indicators ===
-    lightLeft = createSpotlight(
-      { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
-      new THREE.Vector3(car.position.x + 0.855, car.position.y + 0.545, car.position.z + 2.25),
-      new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.625, car.position.z + 2.15)
-    );
-
-    lightRight = createSpotlight(
-      { color: 0xffffff, intensity: 7.5, distance: 0.5, angle: Math.PI / 4, penumbra: 0.1, decay: 1 },
-      new THREE.Vector3(car.position.x - 0.855, car.position.y + 0.545, car.position.z + 2.25),
-      new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.625, car.position.z + 2.15)
-    );
-
-    // === Functional Headlights ===
-    headlightLeft = createSpotlight(
-      { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
-      new THREE.Vector3(car.position.x + 0.75, car.position.y + 1, car.position.z + 1.55),
-      new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.25, car.position.z + 25)
-    );
-
-    headlightRight = createSpotlight(
-      { color: 0xffffff, intensity: 2.5, distance: 200, angle: Math.PI / 8, penumbra: 1, decay: 2 },
-      new THREE.Vector3(car.position.x - 0.75, car.position.y + 1, car.position.z + 1.55),
-      new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.25, car.position.z + 25)
-    );
-
-    // === Taillights ===
-    taillightLeft = createSpotlight(
-      { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(car.position.x + 0.85, car.position.y + 0.7, car.position.z - 2.275),
-      new THREE.Vector3(car.position.x + 0.75, car.position.y + 0.7, car.position.z - 2.3)
-    );
-
-    taillightRight = createSpotlight(
-      { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(car.position.x - 0.85, car.position.y + 0.7, car.position.z - 2.275),
-      new THREE.Vector3(car.position.x - 0.75, car.position.y + 0.7, car.position.z - 2.3)
-    );
-
-    taillightMiddle = createSpotlight(
-      { color: 0xff0000, intensity: 5, distance: 0.5, angle: Math.PI / 2, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.275),
-      new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z - 2.3)
-    );
-
-    interiorLight = createSpotlight(
-      { color: 0xffffff, intensity: 10, distance: 0.5, angle: Math.PI, penumbra: 0.2, decay: 2 },
-      new THREE.Vector3(car.position.x, car.position.y + 0.725, car.position.z + 0.5),
-      new THREE.Vector3(car.position.x, car.position.y + 0.715, car.position.z)
-    );
-    scene.add(car);
-
-    let lightsOn = true;
-    lightToggleBtn.addEventListener('click', () => {
-      lightsOn = !lightsOn;
-      [lightLeft, lightRight, headlightLeft, headlightRight, interiorLight, taillightLeft, taillightRight, taillightMiddle].forEach(light => {
-        light.visible = lightsOn;
-      });
-      lightToggleBtn.textContent = lightsOn ? 'Turn Lights Off' : 'Turn Lights On';
-    });
-  },
-  undefined,
-  function (error) {
-    console.error('An error occurred while loading the car model:', error);
+    Apollo = loadCar('../cars/2019 Gumbert Apollo/source/2019_gumpert_apollo.glb');
   }
-);
+  else {
+    if (car.name == 'Apollo') {
+    scene.remove(car);
+    disposeHierarchy(car);
+    [
+      lightLeft, lightRight, headlightLeft, headlightRight, 
+      taillightLeft, taillightRight, taillightMiddle, interiorLight
+    ].forEach(light => {
+      if (light) {
+        scene.remove(light);
+        light.dispose?.();
+        if (light.target) { scene.remove(light.target); }
+      }
+    });
+    Dodge = loadCar('../cars/Dodge SRT Tomahawk/source/dodge_srt_tomahawk_x.glb');
+    }
+  }
+}
+
+function disposeHierarchy(node) {
+  node.traverse(child => {
+    if (child.isMesh) {
+      if (child.geometry) { child.geometry.dispose(); }
+
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(mat => {
+            disposeMaterial(mat);
+          });
+        }
+        else {
+          disposeMaterial(child.material);
+        }
+      }
+    }
+  });
+}
+
+function disposeMaterial(material) {
+  for (const key in material) {
+    const value = material[key];
+    if (value && value.isTexture) {
+      value.dispose();
+    }
+  }
+  material.dispose();
+}
+
+const carChangeButton = document.getElementById('carChangeBtn');
+carChangeButton.addEventListener('click', () => {
+  changeCar();
+});
+
 
 // =============================
 // [SECTION]: Road + Tiles
