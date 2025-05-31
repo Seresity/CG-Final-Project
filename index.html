@@ -1,48 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Endless Drive</title>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <div id="loading" style="
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: Arial, sans-serif;
-  font-size: 24px;
-  color: #333;
-  background: rgba(255,255,255,0.9);
-  padding: 20px 40px;
-  border-radius: 10px;
-  z-index: 10;
-">
-  Loading...
-</div>
-    <script type="module" src="main.js"></script>
-    <div id="speedDisplay" style="
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #ADD8E6;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 20px;
-  font-family: sans-serif;
-  font-size: 32px;
-  font-weight: bold;
-  border-radius: 8px;
-  z-index: 1;
-">
-  Speed: 60 km/h
-</div>
-  </body>
-  <button id="toggleCameraBtn" style="position: absolute; top: 10px; left: 10px; z-index: 1;">
-    Toggle Free Camera
-  </button>  
+<head>
+  <meta charset="UTF-8" />
+  <title>Endless Drive</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    canvas { display: block; }
+
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .hud {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      pointer-events: auto;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 14px;
+      background-color: #1e1e1e;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #333;
+    }
+
+    .speed-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border: 2px solid #888;
+      border-radius: 50%;
+      background: radial-gradient(#111, #222);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-size: 12px;
+      color: #fff;
+    }
+
+    #needle {
+      position: absolute;
+      width: 2px;
+      height: 45%;
+      background: red;
+      transform-origin: bottom center;
+      transform: rotate(-90deg);
+      top: 5%;
+      left: 49%;
+    }
+
+    #speedLabel {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      font-family: monospace;
+    }
+
+    #dayNightBar {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 10px;
+      background: linear-gradient(to right, #000011, #001133, #2a64cc, #e9e6a5, #ffa94d, #2a64cc, #001133, #000011);
+      border: 1px solid #444;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    #dayNightPointer {
+      position: absolute;
+      width: 4px;
+      height: 100%;
+      background: white;
+      transition: left 0.1s ease;
+    }
+
+    #keyHints {
+      position: absolute;
+      right: 20px;
+      bottom: 30px;
+      text-align: right;
+      color: #ccc;
+      font-size: 14px;
+      font-family: monospace;
+      line-height: 1.4;
+      background-color: rgba(0,0,0,0.4);
+      padding: 10px 15px;
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    #needle.cruise {
+      background-color: white !important;
+      box-shadow: 0 0 8px white;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" style="
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      color: #333;
+      background: rgba(255,255,255,0.9);
+      padding: 20px 40px;
+      border-radius: 10px;
+      z-index: 10;
+    ">
+      Loading...
+    </div>
+
+  <div id="ui">
+    <div class="hud">
+      <div class="speed-container">
+        <div id="needle"></div>
+        <div id="speedLabel">0 km/h</div>
+        <div id="cruiseIcon" style="display: none;">🧭</div>
+      </div>
+      <div class="button-group">
+        <button id="toggleCameraBtn">Enter Free Camera</button>
+        <button id="lightToggleBtn">Turn Lights Off</button>
+        <button id="weatherToggleBtn">Change Weather</button>
+        <button id="carChangeBtn">Change Car</button>
+      </div>
+    </div>
+
+    <div id="dayNightBar">
+      <div id="dayNightPointer"></div>
+    </div>
+
+    <div id="keyHints">
+      <b>Controls:</b><br>
+      W - Accelerate<br>
+      S - Brake<br>
+      A, D - Left, Right<br>
+      Shift + W - Boost<br>
+      Q - Cruise Control<br>
+      Mouse - Look<br>
+      Click & Hold to Rotate<br>
+    </div>
+  </div>
+  <!--Vertex Shader for the rain-->
+  <script id="vertexShaderRain" type="x-shader/x-vertex">
+    varying vec2 vUv;
+
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  </script>
+
+  <!--Fragment Shader for the rain-->
+  <script id="fragmentShaderRain" type="x-shader/x-fragment">
+    uniform vec2 iResolution;
+    uniform float iTime;
+    varying vec2 vUv;
+
+    float rand(vec2 a) {
+      return fract(sin(dot(mod(a, vec2(1000.0)).xy, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    float ease(float t) {
+      return t * t * (3.0 - 2.0 * t);
+    }
+
+    float rainDist(vec2 p, float scale, float intensity, float uTime) {
+      p *= 0.1;
+      p.x += p.y * 0.1;
+      p.y -= uTime * 500.0 / scale;
+      p.y *= 0.03;
+      float ix = floor(p.x);
+      p.y += mod(ix, 2.0) * 0.5 + (rand(vec2(ix)) -0.5) * 0.3;
+      float iy = floor(p.y);
+      vec2 index = vec2(ix, iy);
+      p -= index;
+      p.x += (rand(index.yx) * 2.0 - 1.0) * 0.35;
+      vec2 a = abs(p - 0.5);
+      float res = max(a.x * 0.8, a.y * 0.5) - 0.1;
+      bool empty = rand(index) < mix(1.0, 0.1, intensity);
+      return empty ? 1.0 : res;
+    }
+
+    void main() {
+      vec2 uv = vUv;
+      vec2 fragCoord = uv * iResolution.xy;
+      vec2 wpos = fragCoord;
+      float intensity = 0.2;
+      float uTime = -iTime;
+
+      vec3 add = vec3(0);
+      float rainSum = 0.0;
+
+      const int numLayers = 4;
+      float scales[4];
+      scales[0] = 1.0;
+      scales[1] = 1.8;
+      scales[2] = 2.6;
+      scales[3] = 4.8;
+
+      for (int i = 0; i < numLayers; i++) {
+        float scale = scales[i];
+        float r = rainDist(wpos * scale + 500.0 * float(i), scale, intensity, uTime);
+        if (r < 0.0) {
+          float v = (1.0 - exp(r * 5.0)) / scale * 2.0;
+          wpos.x += v * 10.0;
+          wpos.y -= v * 2.0;
+          add += vec3(0.1, 0.15, 0.2) * v;
+          rainSum += (1.0 - rainSum) * 0.75;
+        }
+      }
+
+      vec3 rainColor = vec3(0.4, 0.5, 0.8);
+      vec3 color = vec3(0.0);
+
+      color += add;
+      color = mix(color, rainColor, 0.2 * rainSum);
+
+      gl_FragColor = vec4(color, rainSum);
+    }
+  </script>
+
+  <script type="module" src="main.js"></script>
+</body>
 </html>
