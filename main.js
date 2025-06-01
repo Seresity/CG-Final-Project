@@ -505,7 +505,7 @@ function createRoadSegment(z) {
   const positionAttribute = roadGeometry.attributes.position;
   for (let i = 0; i <= segmentsAlongLength; i++) {
     // y coordinate along length from -halfLength to +halfLength
-    const localY = (i / segmentsAlongLength) * roadSegmentLength - roadSegmentLength / 2;
+    const localY = (i / segmentsAlongLength) * roadSegmentLength;
     const worldZ = z + localY; // true world Z position
     //const height = Math.max(0, Math.sin(globalZ * curveFrequency)) * curveAmplitude;
     const height = (Math.sin(worldZ * curveFrequency) * 0.5 + 0.5) * curveAmplitude;
@@ -548,7 +548,7 @@ roadGeometry.computeVertexNormals();
 
   // Rotate plane so it's flat on XZ plane (default PlaneGeometry lies in XY)
   road.rotation.x = -Math.PI / 2;
-  road.position.set(0, 0, 0);
+  road.position.set(0, 0, roadSegmentLength / 2);
   group.add(road);
   // Side tiles with environment decorations
   const sideTileWidth = roadWidth * 4;
@@ -845,7 +845,7 @@ function animate(time) {
   // === Car & Road Logic ===
 const downRaycaster = new THREE.Raycaster();
 const downDirection = new THREE.Vector3(0, -1, 0);
-const carOffsetHeight = 0.3; // how high above road surface the car floats
+const carOffsetHeight = 0.2;
 
 if (car) {
   // Move car forward along Z axis by speed
